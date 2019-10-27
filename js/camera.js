@@ -27,7 +27,7 @@
 
 // Camera vaules
 var cx = 0.0,
-  cy = 10.0,
+  cy = 50.0,
   cz = 0.0,
   tx = 0.0,
   ty = 0.0,
@@ -68,10 +68,14 @@ var fovMin = 10,
   fovMax = 160,
   cyMin = 5,
   cyMax = 600,
-  txMin = -500,
-  txMax = 500,
-  tzMin = -500,
-  tzMax = 500;
+  txMin = -600,
+  txMax = 600,
+  tzMin = -600,
+  tzMax = 600;
+  czMax = tzMax,
+  czMin = tzMin,
+  cxMax = txMax,
+  cxMin = txMin;
 
 // Mouse interaction parameters
 var lastX = 0, lastY = 0;
@@ -87,15 +91,15 @@ function initCameraInteraction () {
 function moveCamera () {
   // Apply movemets registered from mouse or keyboard
   if (craneUpDown != 0) {
-    tz += craneUpDown;
-    tz = Math.max (tz, tzMin);
-    tz = Math.min (tz, tzMax);
+    cz += craneUpDown;
+    cz = Math.max (cz, czMin);
+    cz = Math.min (cz, czMax);
     craneUpDown = 0;
   }
   if (trackLeftRight != 0) {
-    tx -= trackLeftRight;
-    tx = Math.max (tx, txMin);
-    tx = Math.min (tx, txMax);
+    cx -= trackLeftRight;
+    cx = Math.max (cx, cxMin);
+    cx = Math.min (cx, cxMax);
     trackLeftRight = 0;
   }
   if (pushInPullOut != 0) {
@@ -139,6 +143,11 @@ function moveCamera () {
     pushInPullOut = 0;
   }
 
+  // Synct c and t
+  tx = cx;
+  ty = cy - 1;
+  tz = cz;
+
   limit ();
 
   // Recompute camera matrices
@@ -180,7 +189,7 @@ function moveCamera () {
     '<br>uz: ' +
     uz.toFixed (2) +
     '<br>fov: ' +
-    fov.toFixed (2) +
+    fov.toFixed(2) +
     '<br>step: ' +
     step.toFixed(1) +
     '<br>selected: ' +
@@ -380,6 +389,15 @@ function initKeyboardCallback () {
       case 79: // O
         step -= 0.5;
         step = Math.max(step, 0.5);
+        break;
+
+      
+      // Angle
+      case 90: // Z
+        angle -= 5;
+        break;
+      case 88: // X
+        angle += 5;
         break;
       default:
         return;

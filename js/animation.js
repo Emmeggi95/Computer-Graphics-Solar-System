@@ -16,6 +16,17 @@ var increasingShine = true;
 var stepShine = 0.001;
 
 
+function stoppableAnimations() {
+  if(animated) {
+    revolutionMovement();
+    rotationMovement();
+  }
+}
+
+function independentAnimations() {
+  shine();
+}
+
 function revolutionMovement() {
     earthOrbitNode.localMatrix = utils.multiplyMatrices(
       utils.MakeRotateYMatrix(rev),

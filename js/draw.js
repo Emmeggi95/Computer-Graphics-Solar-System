@@ -50,12 +50,9 @@ function drawScene(time) {
   // Clear the canvas
   initBackground();
 
-  // Update all local matrices
-  if (animated) {
-    revolutionMovement();
-    rotationMovement();
-  }
-  shine();
+  // Animate
+  stoppableAnimations();
+  independentAnimations();
 
   // Update all world matrices in the scene graph starting from the orbit of the sun (cascade)
   sunOrbitNode.updateWorldMatrix();
