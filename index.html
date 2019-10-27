@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Solar System</title>
+    <link rel='stylesheet' type='text/css' href='style.css'>
+</head>
+<body>
+    <canvas id='c'></canvas>
+    <div class="absolute topleft" id="info"></div>
+    <div class="absolute bottomleft" id="instructions">
+        Mouse/arrows: move around<br>
+        Wheel: zoom<br>
+        A: stop/resume animation<br>
+        + -   &#60- change FOV<br>
+        (if in zoom band 0,<br>
+        change default FOV)<br>
+        Change values using:<br>
+        T Y U &#60- increase c,t,u<br>
+        G H J &#60- decrease c,t,u<br>
+        B N M &#60- select x,y,z<br>
+        O P &#60- change step size
+        
+    </div>
+    <script src="js/utils.js"></script>
+    <script src="js/webgl.js"></script>
+    <script src="js/shaders.js"></script>
+    <script src="js/model.js"></script>
+    <script src="js/textures.js"></script>
+    <script src="js/nodes.js"></script>
+    <script src="js/animation.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/draw.js"></script>
+    <script src="app.js"></script>      
+</body>
+</html>
