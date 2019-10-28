@@ -63,6 +63,19 @@ var animated = true;
 
 var zoomPrecision = 100; // Under this value the zoom speed is costant, over this value it accelerates.
 
+// Camera rotation
+var pitchAngle = 0; // Vertical rotation around x axis
+var yawAngle = 0; // Horizontal rotation around y axis
+
+var angleStep = 5;
+
+// The rotation is computed starting from default vectors
+var cuDefault = [0.0, 0.0, 1.0]; // Default c-u vector
+var tcDefault = [0.0, 1.0, 0.0]; // Default t-c vector
+var tc;
+
+var distance = 50;
+
 // Camera limits;
 var fovMin = 10,
   fovMax = 160,
@@ -75,12 +88,19 @@ var fovMin = 10,
   czMax = tzMax,
   czMin = tzMin,
   cxMax = txMax,
-  cxMin = txMin;
+  cxMin = txMin,
+  distanceMin = 5,
+  distanceMax = 600,
+  pitchAngleMax = 90,
+  pitchAngleMin = 0;
 
 // Mouse interaction parameters
 var lastX = 0, lastY = 0;
 var dMouseX = 0, dMouseY = 0;
 var trackingMouseMotion = false;
+
+// Kill
+var moving = true;
 
 function initCameraInteraction () {
   initMouseMotionCallback ();
@@ -91,33 +111,34 @@ function initCameraInteraction () {
 function moveCamera () {
   // Apply movemets registered from mouse or keyboard
   if (craneUpDown != 0) {
-    cz += craneUpDown;
-    cz = Math.max (cz, czMin);
-    cz = Math.min (cz, czMax);
+    tz += craneUpDown;
+    tz = Math.max (tz, tzMin);
+    tz = Math.min (tz, tzMax);
     craneUpDown = 0;
   }
   if (trackLeftRight != 0) {
-    cx -= trackLeftRight;
-    cx = Math.max (cx, cxMin);
-    cx = Math.min (cx, cxMax);
+    tx -= trackLeftRight;
+    tx = Math.max (tx, txMin);
+    tx = Math.min (tx, txMax);
     trackLeftRight = 0;
   }
+  // Zooming
   if (pushInPullOut != 0) {
     switch (zoomBand) {
       // If you are between cy limits, change cy value
       case 0: 
-        if (cy > zoomPrecision) {
+        if (distance > zoomPrecision) {
           // Zoom faster when you zoom out a lot
-          cy -= pushInPullOut * cy / zoomPrecision;
+          distance -= pushInPullOut * distance / zoomPrecision;
         } else {
-          cy -= pushInPullOut;
+          distance -= pushInPullOut;
         }
-        if (cy < cyMin) {
-          cy = cyMin;
+        if (distance < distanceMin) {
+          distance = distanceMin;
           fov -= pushInPullOut;
           zoomBand = -1;
-        } else if (cy > cyMax) {
-          cy = cyMax;
+        } else if (distance > distanceMax) {
+          distance = distanceMax;
           fov -= pushInPullOut;
           zoomBand = 1;
         }
@@ -127,7 +148,7 @@ function moveCamera () {
         fov -= pushInPullOut;
         if (fov > defaultFov) {
           fov = defaultFov;
-          cy -= pushInPullOut;
+          distance -= pushInPullOut;
           zoomBand = 0;
         }
         break;
@@ -135,7 +156,7 @@ function moveCamera () {
         fov -= pushInPullOut;
         if (fov < defaultFov) {
           fov = defaultFov;
-          cy -= pushInPullOut;
+          distance -= pushInPullOut;
           zoomBand = 0;
         }
         break;
@@ -143,10 +164,13 @@ function moveCamera () {
     pushInPullOut = 0;
   }
 
-  // Synct c and t
-  tx = cx;
-  ty = cy - 1;
-  tz = cz;
+  // Compute t and u
+  tc = rotate(tcDefault, distance);
+  cx = tx + tc[0];
+  cy = ty + tc[1];
+  cz = tz + tc[2];
+
+  [ux, uy, uz] = rotate(cuDefault, 1.0);
 
   limit ();
 
@@ -168,6 +192,11 @@ function moveCamera () {
 
   viewProjectionMatrix = utils.multiplyMatrices (projectionMatrix, viewMatrix);
 
+  printInfo();
+  
+}
+
+function printInfo() {
   // Print camera values on screen
   info.innerHTML =
     'cx: ' +
@@ -195,7 +224,13 @@ function moveCamera () {
     '<br>selected: ' +
     selected +
     '<br>zoom band: ' +
-    zoomBand;
+    zoomBand +
+    '<br>yaw angle: ' +
+    yawAngle +
+    '<br>pitch angle: ' +
+    pitchAngle +
+    '<br>moving: ' +
+    moving;
 }
 
 // Avoid breking the limits
@@ -259,7 +294,7 @@ function initMouseMotionCallback () {
 function initKeyboardCallback () {
   document.onkeydown = function (event) {
     switch (event.keyCode) {
-      case 65: // A
+      case 81: // Q
         animated = !animated;
         break;
       case 37: // Arrow left
@@ -393,12 +428,35 @@ function initKeyboardCallback () {
 
       
       // Angle
-      case 90: // Z
-        angle -= 5;
+      case 87: // W
+        pitchAngle -= angleStep;
+        pitchAngle = Math.max(pitchAngle, pitchAngleMin);
         break;
-      case 88: // X
-        angle += 5;
+      case 83: // S
+        pitchAngle += angleStep;
+        pitchAngle = Math.min(pitchAngle, pitchAngleMax);
         break;
+      case 65: // A
+        yawAngle += angleStep;
+        if(yawAngle >= 360) {
+          yawAngle -= 360;
+        }
+        break;
+      case 68: // D
+        yawAngle -= angleStep;
+        if(yawAngle < 0) {
+          yawAngle += 360;
+        }
+        break;
+
+        // Change step size
+      case 76: // L
+      moveCamera();
+      break;
+    case 75: // K
+      moving = !moving;
+      printInfo();
+      break;
       default:
         return;
     }
@@ -410,4 +468,23 @@ function initWheelCallback () {
   document.onwheel = function (event) {
     pushInPullOut -= event.deltaY * 0.05;
   };
+}
+
+function rotate(v, m) {
+  pitchSin = Math.sin(utils.degToRad(pitchAngle));
+  pitchCos = Math.cos(utils.degToRad(pitchAngle));
+  yawSin = Math.sin(utils.degToRad(yawAngle));
+  yawCos = Math.cos(utils.degToRad(yawAngle));
+
+  var x, y, z, z1;
+
+  // Vertical rotation
+  z1 = pitchCos * v[2] - pitchSin * v[1];
+  y = pitchSin * v[2] + pitchCos * v[1];
+
+  // Horizontal rotation
+  z = yawCos * z1 - yawSin * v[0];
+  x = yawSin * z1 + yawCos * v[0];
+
+  return [x * m, y * m, z * m];
 }
