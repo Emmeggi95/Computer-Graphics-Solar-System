@@ -14,6 +14,9 @@ var perspectiveMatrix, viewMatrix, worldMatrix, viewWorldMatrix;
 var alColor = [1.0, 1.0, 1.0];
 var alInfluence = 0.3; // Must be between 0 and 1
 
+// Specular light
+var mSpecColor = [0.5, 0.5, 0.5, 1.0];
+var mSpecPower = 2.0;
 // Material emission
 var brightMaterialColor = [1.0, 1.0, 1.0];
 var darkMaterialColor = [0.0, 0.0, 0.0];
@@ -74,6 +77,10 @@ function renderObjects () {
   gl.uniform3fv (plColorLoc, plColor);
   gl.uniform1f (plTargetLoc, plTarget);
   gl.uniform1f (plDecayLoc, plDecay);
+  gl.uniform3fv(eyePositionLoc, cameraPosition);
+  gl.uniform1f(mSpecPowerLoc, mSpecPower);
+  gl.uniform4fv(mSpecColorLoc, mSpecColor);
+  gl.uniform3fv(targetPositionLoc, target);
 
   // Set values for each object
   objects.forEach (function (object, index) {

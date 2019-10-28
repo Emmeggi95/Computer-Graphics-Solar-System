@@ -23,9 +23,20 @@ uniform vec3 plColor;
 uniform float plTarget;
 uniform float plDecay;
 
+// Material spec
+uniform vec4 mSpecColor;
+uniform float mSpecPower;
+
+uniform vec3 eyePosition;
+uniform vec3 targetPosition;
+
 out vec4 outColor;
 
 void main() {
+    vec3 lookingDirection = normalize(eyePosition - targetPosition);
+    vec3 nEyeDirection = normalize(eyePosition - fsPosition);
+    vec3 nNormal = normalize(fsNormal);
+
     // Texture
     vec4 textureColor = texture(objectTexture, fsUV);
 
@@ -41,7 +52,12 @@ void main() {
     float plDistance = length(plPosition - fsPosition);
     vec4 pointLight = vec4(plColor * pow(plTarget / plDistance, plDecay), 1.0);
     vec4 lambertDiffuse = textureColor * clamp(dot(normalize(plPosition - fsPosition), fsNormal), 0.0, 1.0);
+    vec3 d = normalize(plPosition - fsPosition);
 
+    vec3 r = 2.0 * nNormal * dot(d, nNormal) - d;
+    
+    vec3 h = normalize(nEyeDirection + lookingDirection);
+    vec4 specularLight = mSpecColor * pow(clamp(dot(lookingDirection, r), 0.0, 1.0 ), mSpecPower);
     // Shader output
-    outColor = clamp(pointLight * lambertDiffuse + ambientLight + emissionLight, 0.0, 1.0);
+    outColor = clamp(pointLight * lambertDiffuse + ambientLight + emissionLight + specularLight, 0.0, 1.0);
 }

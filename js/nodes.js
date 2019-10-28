@@ -136,7 +136,7 @@ function buildSceneGraph() {
   earthNode = new Node();
   earthNode.localMatrix = utils.MakeScaleMatrix(x, 2, 2);
   earthNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -145,7 +145,7 @@ function buildSceneGraph() {
   moonNode = new Node();
   moonNode.localMatrix = utils.MakeScaleMatrix(x * 0.27, 0.7, 0.7);
   moonNode.drawInfo = {
-    materialColor: [0.6, 0.6, 0.6],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -154,7 +154,7 @@ function buildSceneGraph() {
   marsNode = new Node();
   marsNode.localMatrix = utils.MakeScaleMatrix(0.53 * x, 2, 2);
   marsNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -163,7 +163,7 @@ function buildSceneGraph() {
   jupiterNode = new Node();
   jupiterNode.localMatrix = utils.MakeScaleMatrix(11.2 * x, 2, 2);
   jupiterNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -172,7 +172,7 @@ function buildSceneGraph() {
   saturnNode = new Node();
   saturnNode.localMatrix = utils.MakeScaleMatrix(9.4 * x, 2, 2);
   saturnNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -181,7 +181,7 @@ function buildSceneGraph() {
   uranusNode = new Node();
   uranusNode.localMatrix = utils.MakeScaleMatrix(4.07 * x, 2, 2);
   uranusNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -190,7 +190,7 @@ function buildSceneGraph() {
   neptuneNode = new Node();
   neptuneNode.localMatrix = utils.MakeScaleMatrix(3.79 * x, 2, 2);
   neptuneNode.drawInfo = {
-    materialColor: [0.2, 0.5, 0.8],
+    materialColor: [0.5, 0.5, 0.5],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao

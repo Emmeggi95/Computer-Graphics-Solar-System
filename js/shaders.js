@@ -14,6 +14,8 @@ var textureLoc; // texture
 var alColorLoc, alInfluenceLoc; // ambient lighting
 var meColorLoc, meInfluenceLoc; // emission material
 var plPositionLoc, plColorLoc, plTargetLoc, plDecayLoc; // point light
+var eyePositionLoc, targetPositionLoc;
+var mSpecColorLoc, mSpecPowerLoc;
 
 
 function loadShaders() {
@@ -49,4 +51,8 @@ function loadShaders() {
   plColorLoc = gl.getUniformLocation(program, "plColor");
   plTargetLoc = gl.getUniformLocation(program, "plTarget");
   plDecayLoc = gl.getUniformLocation(program, "plDecay");
+  eyePositionLoc = gl.getUniformLocation(program, "eyePosition");
+  mSpecPowerLoc = gl.getUniformLocation(program, "mSpecPower");
+  mSpecColorLoc = gl.getUniformLocation(program, "mSpecColor");
+  targetPositionLoc = gl.getUniformLocation(program, "targetPosition");
 }
