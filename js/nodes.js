@@ -45,6 +45,9 @@ Node.prototype.updateWorldMatrix = function(matrix) {
 // Objects: the set of nodes which are drawn on the screen
 var objects = [];
 
+// Orbits: used to compute camera position when anchored to a planet
+ var orbits = [];
+
 // Orbit nodes
 var sunOrbitNode,
   earthOrbitNode,
@@ -70,40 +73,52 @@ var sunNode,
   neptuneNode;
 
 // Units of measure
-var d = 6; //distance venus-sun
+var d = 6; //distance mercury-sun
 var x = 1; //diameter earth
+
+var orbitScales = [0, 1, 2.07, 2.82, 0.4, 4.17, 14.76, 27.34, 52.72, 86.76];
 
 
 function buildSceneGraph() {
   // Define orbits
   sunOrbitNode = new Node();
+  sunOrbitNode.name = "Sun";
 
   mercuryOrbitNode = new Node();
   mercuryOrbitNode.localMatrix = utils.MakeTranslateMatrix(d, 0, 0);
+  mercuryOrbitNode.name = "Mercury";
 
   venusOrbitNode = new Node();
   venusOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.07, 0, 0);
+  venusOrbitNode.name = "Venus";
 
   earthOrbitNode = new Node();
   earthOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.82, 0, 0);
+  earthOrbitNode.name = "Earth";
 
   moonOrbitNode = new Node();
   moonOrbitNode.localMatrix = utils.MakeTranslateMatrix(0.4 * d, 0, 0);
+  moonOrbitNode.name = "Moon";
 
   marsOrbitNode = new Node();
   marsOrbitNode.localMatrix = utils.MakeTranslateMatrix(4.17 * d, 0, 0);
+  marsOrbitNode.name = "Mars";
 
   jupiterOrbitNode = new Node();
   jupiterOrbitNode.localMatrix = utils.MakeTranslateMatrix(14.76 * d, 0, 0);
+  jupiterOrbitNode.name = "Jupiter";
 
   saturnOrbitNode = new Node();
   saturnOrbitNode.localMatrix = utils.MakeTranslateMatrix(27.34 * d, 0, 0);
+  saturnOrbitNode.name = "Saturn";
 
   uranusOrbitNode = new Node();
   uranusOrbitNode.localMatrix = utils.MakeTranslateMatrix(52.72 * d, 0, 0);
+  uranusOrbitNode.name = "Uranus";
 
   neptuneOrbitNode = new Node();
   neptuneOrbitNode.localMatrix = utils.MakeTranslateMatrix(86.76 * d, 0, 0);
+  neptuneOrbitNode.name = "Neptune";
 
   sunNode = new Node();
   sunNode.localMatrix = utils.MakeScaleMatrix(1, 5, 5);
@@ -229,5 +244,19 @@ function buildSceneGraph() {
     saturnNode,
     uranusNode,
     neptuneNode
+  ];
+
+  // Save the orbits in the array
+  orbits = [
+    sunOrbitNode,
+    mercuryOrbitNode,
+    venusOrbitNode,
+    earthOrbitNode,
+    moonOrbitNode,
+    marsOrbitNode,
+    jupiterOrbitNode,
+    saturnOrbitNode,
+    uranusOrbitNode,
+    neptuneOrbitNode
   ];
 }

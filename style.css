@@ -28,3 +28,7 @@ div.absolute.bottomleft {
   bottom: 0;
   left: 0;
 }
+div.absolute.topright {
+  top: 0;
+  right: 0;
+}
