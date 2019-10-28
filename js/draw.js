@@ -16,7 +16,7 @@ var alInfluence = 0.3; // Must be between 0 and 1
 
 // Specular light
 var mSpecColor = [0.5, 0.5, 0.5, 1.0];
-var mSpecPower = 2.0;
+var mSpecPower = 6.0;
 // Material emission
 var brightMaterialColor = [1.0, 1.0, 1.0];
 var darkMaterialColor = [0.0, 0.0, 0.0];

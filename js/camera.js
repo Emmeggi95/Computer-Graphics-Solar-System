@@ -225,7 +225,7 @@ function moveCamera() {
   projectionMatrix = utils.MakePerspective(
     fov,
     gl.canvas.width / gl.canvas.height,
-    1.0,
+    2.0,
     2000.0
   );
 

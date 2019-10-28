@@ -75,6 +75,7 @@ var sunNode,
 // Units of measure
 var d = 6; //distance mercury-sun
 var x = 1; //diameter earth
+var sunD = 20;
 
 var orbitScales = [0, 1, 2.07, 2.82, 0.4, 4.17, 14.76, 27.34, 52.72, 86.76];
 
@@ -85,15 +86,15 @@ function buildSceneGraph() {
   sunOrbitNode.name = "Sun";
 
   mercuryOrbitNode = new Node();
-  mercuryOrbitNode.localMatrix = utils.MakeTranslateMatrix(d, 0, 0);
+  mercuryOrbitNode.localMatrix = utils.MakeTranslateMatrix(d + sunD, 0, 0);
   mercuryOrbitNode.name = "Mercury";
 
   venusOrbitNode = new Node();
-  venusOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.07, 0, 0);
+  venusOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.07 + sunD, 0, 0);
   venusOrbitNode.name = "Venus";
 
   earthOrbitNode = new Node();
-  earthOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.82, 0, 0);
+  earthOrbitNode.localMatrix = utils.MakeTranslateMatrix(d * 2.82 + sunD, 0, 0);
   earthOrbitNode.name = "Earth";
 
   moonOrbitNode = new Node();
@@ -101,23 +102,23 @@ function buildSceneGraph() {
   moonOrbitNode.name = "Moon";
 
   marsOrbitNode = new Node();
-  marsOrbitNode.localMatrix = utils.MakeTranslateMatrix(4.17 * d, 0, 0);
+  marsOrbitNode.localMatrix = utils.MakeTranslateMatrix(4.17 * d + sunD, 0, 0);
   marsOrbitNode.name = "Mars";
 
   jupiterOrbitNode = new Node();
-  jupiterOrbitNode.localMatrix = utils.MakeTranslateMatrix(14.76 * d, 0, 0);
+  jupiterOrbitNode.localMatrix = utils.MakeTranslateMatrix(14.76 * d + sunD, 0, 0);
   jupiterOrbitNode.name = "Jupiter";
 
   saturnOrbitNode = new Node();
-  saturnOrbitNode.localMatrix = utils.MakeTranslateMatrix(27.34 * d, 0, 0);
+  saturnOrbitNode.localMatrix = utils.MakeTranslateMatrix(27.34 * d + sunD, 0, 0);
   saturnOrbitNode.name = "Saturn";
 
   uranusOrbitNode = new Node();
-  uranusOrbitNode.localMatrix = utils.MakeTranslateMatrix(52.72 * d, 0, 0);
+  uranusOrbitNode.localMatrix = utils.MakeTranslateMatrix(52.72 * d + sunD, 0, 0);
   uranusOrbitNode.name = "Uranus";
 
   neptuneOrbitNode = new Node();
-  neptuneOrbitNode.localMatrix = utils.MakeTranslateMatrix(86.76 * d, 0, 0);
+  neptuneOrbitNode.localMatrix = utils.MakeTranslateMatrix(86.76 * d + sunD, 0, 0);
   neptuneOrbitNode.name = "Neptune";
 
   sunNode = new Node();
@@ -130,6 +131,15 @@ function buildSceneGraph() {
   };
 
   // Define planets
+  sunNode = new Node();
+  sunNode.localMatrix = utils.MakeScaleMatrix(sunD*0.8, 5, 5);
+  sunNode.drawInfo = {
+    materialColor: [0.6, 0.6, 0.0],
+    programInfo: program,
+    bufferLength: indices.length,
+    vertexArray: vao
+  };
+
   mercuryNode = new Node();
   mercuryNode.localMatrix = utils.MakeScaleMatrix(0.38 * x, 3, 3);
   mercuryNode.drawInfo = {
@@ -151,7 +161,7 @@ function buildSceneGraph() {
   earthNode = new Node();
   earthNode.localMatrix = utils.MakeScaleMatrix(x, 2, 2);
   earthNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.8],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -160,16 +170,16 @@ function buildSceneGraph() {
   moonNode = new Node();
   moonNode.localMatrix = utils.MakeScaleMatrix(x * 0.27, 0.7, 0.7);
   moonNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.6, 0.6, 0.6],
     programInfo: program,
     bufferLength: indices.length,
-    vertexArray: vao
+    vertexArray: vao,
   };
 
   marsNode = new Node();
   marsNode.localMatrix = utils.MakeScaleMatrix(0.53 * x, 2, 2);
   marsNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -178,7 +188,7 @@ function buildSceneGraph() {
   jupiterNode = new Node();
   jupiterNode.localMatrix = utils.MakeScaleMatrix(11.2 * x, 2, 2);
   jupiterNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -187,7 +197,7 @@ function buildSceneGraph() {
   saturnNode = new Node();
   saturnNode.localMatrix = utils.MakeScaleMatrix(9.4 * x, 2, 2);
   saturnNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -196,7 +206,7 @@ function buildSceneGraph() {
   uranusNode = new Node();
   uranusNode.localMatrix = utils.MakeScaleMatrix(4.07 * x, 2, 2);
   uranusNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
@@ -205,7 +215,7 @@ function buildSceneGraph() {
   neptuneNode = new Node();
   neptuneNode.localMatrix = utils.MakeScaleMatrix(3.79 * x, 2, 2);
   neptuneNode.drawInfo = {
-    materialColor: [0.5, 0.5, 0.5],
+    materialColor: [0.2, 0.5, 0.8],
     programInfo: program,
     bufferLength: indices.length,
     vertexArray: vao
