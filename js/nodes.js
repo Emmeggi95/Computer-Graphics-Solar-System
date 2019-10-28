@@ -77,6 +77,7 @@ var d = 6; //distance mercury-sun
 var x = 1; //diameter earth
 var sunD = 20;
 
+var planetScales = [sunD * 0.8, 0.38 * x, 0.948 * x, x, x * 0.27, 0.53 * x, 11.2 * x, 9.4 * x, 4.07 * x, 3.79 * x]; //Needed for the nearPlane 
 var orbitScales = [0, 1, 2.07, 2.82, 0.4, 4.17, 14.76, 27.34, 52.72, 86.76];
 
 

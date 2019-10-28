@@ -32,3 +32,7 @@ div.absolute.topright {
   top: 0;
   right: 0;
 }
+div.absolute.bottomright {
+  bottom: 0;
+  right: 0;
+}

@@ -33,7 +33,7 @@ function revolutionMovement() {
       earthOrbitNode.localMatrix
     );
     moonOrbitNode.localMatrix = utils.multiplyMatrices(
-      utils.MakeRotateYMatrix(0.6),
+      utils.MakeRotateYMatrix(0.6 * rev),
       moonOrbitNode.localMatrix
     );
     mercuryOrbitNode.localMatrix = utils.multiplyMatrices(
@@ -68,7 +68,7 @@ function revolutionMovement() {
   
   function rotationMovement() {
     sunNode.localMatrix = utils.multiplyMatrices(
-      utils.MakeRotateYMatrix(0.05),
+      utils.MakeRotateYMatrix(rot / 365 *0.05),
       sunNode.localMatrix
     );
     mercuryNode.localMatrix = utils.multiplyMatrices(
@@ -84,7 +84,7 @@ function revolutionMovement() {
       earthNode.localMatrix
     );
     moonNode.localMatrix = utils.multiplyMatrices(
-      utils.MakeRotateYMatrix(-0.1),
+      utils.MakeRotateYMatrix(-0.1 * rot / 365),
       moonNode.localMatrix
     );
     marsNode.localMatrix = utils.multiplyMatrices(
@@ -124,4 +124,10 @@ function shine() {
     }
   }
 
+}
+
+
+function updateSpeedInfluence(val) {
+  rev = val;
+  rot = 365 * val;
 }

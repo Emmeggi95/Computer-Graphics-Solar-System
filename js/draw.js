@@ -16,7 +16,7 @@ var alInfluence = 0.3; // Must be between 0 and 1
 
 // Specular light
 var mSpecColor = [0.5, 0.5, 0.5, 1.0];
-var mSpecPower = 6.0;
+var mSpecPower = 12.0;
 // Material emission
 var brightMaterialColor = [1.0, 1.0, 1.0];
 var darkMaterialColor = [0.0, 0.0, 0.0];
@@ -26,7 +26,7 @@ var darkMaterialColor = [0.0, 0.0, 0.0];
 var plPosition = [0.0, 0.0, 0.0];
 var plColor = [0.945, 0.855, 0.643];
 var plTarget = 10.0;
-var plDecay = 0.5;
+var plDecay = 0.05;
 
 function startDrawing () {
   initMatrices ();

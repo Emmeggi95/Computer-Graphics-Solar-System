@@ -199,9 +199,11 @@ function moveCamera() {
     cz = tz + tc[2];
 
     [ux, uy, uz] = rotate3dVector(cuDefault, yawAngle, pitchAngle, 1.0);
-  }
-  else {
-    var pw = utils.multiplyMatrixVector(utils.transposeMatrix(orbits[planetSelected].worldMatrix), [px, py, pz, 1.0]);
+  } else {
+    var pw = utils.multiplyMatrixVector(
+      utils.transposeMatrix(orbits[planetSelected].worldMatrix),
+      [px, py, pz, 1.0]
+    );
     cx = pw[0];
     cy = pw[1];
     cz = -pw[2];
@@ -214,8 +216,6 @@ function moveCamera() {
     uy = 1.0;
     uz = 0.0;
   }
-
-  
 
   limit();
 
@@ -517,12 +517,17 @@ function initWheelCallback() {
 
 function selectPlanet(n) {
   console.log("Selected planet number " + n + ": " + orbits[n].name);
-  px = orbitScales[n] * d;
-  py = 0.0;
-  pz = 0.0;
-  planetSelected = n;
-  nearPlane = 12.0;
-  free = false;
+  if (n == 0) {
+    px = 0.0;
+  } else {
+    px = orbitScales[n] * d + sunD;
+  }
+    py = 0.0;
+    pz = 0.0;
+    planetSelected = n;
+    nearPlane = planetScales[n];
+    free = false;
+
 }
 
 function freeCamera() {
