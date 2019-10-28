@@ -57,6 +57,8 @@ var moveVector = [0.0, 0.0, 0.0];
 var step = 0.5;
 
 var fov = 60;
+var nearPlane = 1.0;
+var farPlane = 2000.0;
 
 var defaultFov = 60;
 var zoomBand = 0;
@@ -199,10 +201,10 @@ function moveCamera() {
     [ux, uy, uz] = rotate3dVector(cuDefault, yawAngle, pitchAngle, 1.0);
   }
   else {
-    var pw = utils.multiplyMatrixVector(orbits[planetSelected].worldMatrix, [px, py, pz, 1.0]);
+    var pw = utils.multiplyMatrixVector(utils.transposeMatrix(orbits[planetSelected].worldMatrix), [px, py, pz, 1.0]);
     cx = pw[0];
     cy = pw[1];
-    cz = pw[2];
+    cz = -pw[2];
 
     tx = 0.0;
     ty = 0.0;
@@ -225,8 +227,8 @@ function moveCamera() {
   projectionMatrix = utils.MakePerspective(
     fov,
     gl.canvas.width / gl.canvas.height,
-    2.0,
-    2000.0
+    nearPlane,
+    farPlane
   );
 
   var cameraMatrix = utils.LookAt(cameraPosition, target, up);
@@ -519,10 +521,12 @@ function selectPlanet(n) {
   py = 0.0;
   pz = 0.0;
   planetSelected = n;
+  nearPlane = 12.0;
   free = false;
 }
 
 function freeCamera() {
   console.log("CAMERA FREE!!");
+  nearPlane = 1.0;
   free = true;
 }
