@@ -6,11 +6,11 @@ function rotate3dVector(v, yawAngle, pitchAngle, factor) {
   
     var x, y, z, z1;
   
-    // Vertical rotation
+    // Vertical rotation around x
     z1 = pitchCos * v[2] - pitchSin * v[1];
     y = pitchSin * v[2] + pitchCos * v[1];
   
-    // Horizontal rotation
+    // Horizontal rotation around y
     z = yawCos * z1 - yawSin * v[0];
     x = yawSin * z1 + yawCos * v[0];
   

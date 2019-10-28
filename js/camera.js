@@ -68,8 +68,9 @@ var animated = true;
 var zoomPrecision = 100; // Under this value the zoom speed is costant, over this value it accelerates.
 
 // Camera rotation
-var pitchAngle = 0; // Vertical rotation around x axis
-var yawAngle = 0; // Horizontal rotation around y axis
+var pitchAngle = 0.0; // Vertical rotation around x axis
+var yawAngle = 0.0; // Horizontal rotation around y axis
+var rollAngle = 0.0; // Rotation around z axis
 
 var angleStep = 5;
 
@@ -83,6 +84,10 @@ var distance = 50;
 var planetSelected;
 var free = true; // False if the user selected a planet
 var px, py, pz;
+var lookToTheSun = false;
+var ctLockedDefault = [0.0, 0.0, 1.0];
+var cuLockedDefault = [0.0, 1.0, 0.0];
+var ct;
 
 // Camera limits;
 var fovMin = 10,
@@ -92,15 +97,15 @@ var fovMin = 10,
   txMin = -600,
   txMax = 600,
   tzMin = -600,
-  tzMax = 600;
-(czMax = tzMax),
-  (czMin = tzMin),
-  (cxMax = txMax),
-  (cxMin = txMin),
-  (distanceMin = 5),
-  (distanceMax = 600),
-  (pitchAngleMax = 85),
-  (pitchAngleMin = 0);
+  tzMax = 600,
+  czMax = tzMax,
+  czMin = tzMin,
+  cxMax = txMax,
+  cxMin = txMin,
+  distanceMin = 5,
+  distanceMax = 600,
+  pitchAngleMax = 85,
+  pitchAngleMin = 0;
 
 // Mouse interaction parameters
 var lastX = 0,
@@ -200,6 +205,7 @@ function moveCamera() {
 
     [ux, uy, uz] = rotate3dVector(cuDefault, yawAngle, pitchAngle, 1.0);
   } else {
+    // POV is inside one planet
     var pw = utils.multiplyMatrixVector(
       utils.transposeMatrix(orbits[planetSelected].worldMatrix),
       [px, py, pz, 1.0]
@@ -208,13 +214,20 @@ function moveCamera() {
     cy = pw[1];
     cz = -pw[2];
 
-    tx = 0.0;
-    ty = 0.0;
-    tz = 0.0;
+    if (lookToTheSun) {
+      tx = 0.0;
+      ty = 0.0;
+      tz = 0.0;
 
-    ux = 0.0;
-    uy = 1.0;
-    uz = 0.0;
+      ux = 0.0;
+      uy = 1.0;
+      uz = 0.0;
+    } else {
+      ct = rotate3dVector(ctLockedDefault, yawAngle, pitchAngle, 1.0);
+      [tx, ty, tz] = sum3dVectors([cx, cy, cz], ct);
+
+      [ux, uy, uz] = rotate3dVector(cuLockedDefault, yawAngle, pitchAngle, 1.0);
+    }
   }
 
   limit();
@@ -320,14 +333,29 @@ function initMouseMotionCallback() {
       dMouseX = (x - lastX) / canvas.width;
       dMouseY = (y - lastY) / canvas.height;
 
-      // For camera pitch and yaw motions
-      scale = 30;
-      // Add the mouse motion to the current rotation angle so that the rotation
-      // is added to the previous rotations.
-      // Use scale to control the speed of the rotation.
-      trackLeftRight -= (((scale * dMouseX * cy) / 20) * fov) / 60;
+      if (free) {
+        // For camera pitch and yaw motions
+        scale = 30;
+        // Add the mouse motion to the current rotation angle so that the rotation
+        // is added to the previous rotations.
+        // Use scale to control the speed of the rotation.
+        trackLeftRight -= (((scale * dMouseX * cy) / 20) * fov) / 60;
 
-      craneUpDown += (((scale * dMouseY * cy) / 20) * fov) / 60;
+        craneUpDown += (((scale * dMouseY * cy) / 20) * fov) / 60;
+      } else {
+        // For camera pitch and yaw motions
+        scale = 30;
+        // Add the mouse motion to the current rotation angle so that the rotation
+        // is added to the previous rotations.
+        // Use scale to control the speed of the rotation.
+        yawAngle += scale * dMouseX;
+
+        pitchAngle += scale * dMouseY;
+        pitchAngle = Math.max(
+          Math.min(pitchAngle, pitchAngleMax),
+          pitchAngleMin
+        );
+      }
     }
 
     // Save the current mouse location in order to calculate the next mouse motion.
@@ -502,6 +530,11 @@ function initKeyboardCallback() {
         moving = !moving;
         printInfo();
         break;
+
+      // Look to the Sun
+      case 49: // 1
+        lookToTheSun = !lookToTheSun;
+        break;
       default:
         return;
     }
@@ -517,21 +550,26 @@ function initWheelCallback() {
 
 function selectPlanet(n) {
   console.log("Selected planet number " + n + ": " + orbits[n].name);
+  py = 0.0;
+  pz = 0.0;
+  planetSelected = n;
+  nearPlane = 12.0;
+  yawAngle = 0.0;
+  pitchAngle = 0.0;
+  pitchAngleMax = 45;
+  pitchAngleMin = -45;
+  free = false;
   if (n == 0) {
     px = 0.0;
   } else {
     px = orbitScales[n] * d + sunD;
   }
-    py = 0.0;
-    pz = 0.0;
-    planetSelected = n;
-    nearPlane = planetScales[n];
-    free = false;
-
 }
 
 function freeCamera() {
   console.log("CAMERA FREE!!");
+  pitchAngleMax = 85;
+  pitchAngleMin = 0;
   nearPlane = 1.0;
   free = true;
 }
