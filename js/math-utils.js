@@ -36,3 +36,10 @@ function sum3dVectors(v1, v2) {
 function sum2dVectors(v1, v2) {
     return [v1[0] + v2[0], v1[1] + v2[1]];
 }
+
+function angleBetween2dVectors(v1, v2) {
+    var m1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);
+    var m2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
+    var dot = v1[0] * v2[0] + v1[1] * v2[1];
+    return Math.acos(dot / (m1 * m2));
+}

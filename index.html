@@ -31,7 +31,16 @@
         <p><b>Planet Revolution Speed</b></p>
     </div>
 </div>
-    <div class="absolute bottom" id="navigation" style="visibility: hidden;"></div>
+    <div class="absolute bottom" id="navigation" style="visibility: hidden;">
+        <h3 id="planet_name"></h3>
+    <button id="look_sun_button" onclick="
+    lookToTheSun = !lookToTheSun;
+    if(lookToTheSun){
+        lookSunButton.style.backgroundColor = 'cyan';
+    } else {
+        lookSunButton.style.backgroundColor = '';
+    }
+    ">Look at the Sun</button></div>
     <script src="js/utils.js"></script>
     <script src="js/math-utils.js"></script>
     <script src="js/webgl.js"></script>

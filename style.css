@@ -36,6 +36,7 @@ div.absolute.bottom {
   bottom: 0;
   left: 30%;
   right: 30%;
+  text-align: center;
 }
 div.absolute.bottomright {
   bottom: 0;

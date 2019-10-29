@@ -25,6 +25,9 @@
  *
  */
 
+// Constant values
+const DEFAULT_FOV = 60, DEFAULT_DISTANCE = 50;
+
 // Camera vaules
 var cx = 0.0,
   cy = 50.0,
@@ -43,9 +46,12 @@ var up;
 var projectionMatrix, viewProjectionMatrix;
 
 // HTML elements
-var info = document.getElementById("info");
+var info = document.getElementById ('info');
 var selection = 0;
-var selected = "X";
+var selected = 'X';
+var navigation = document.getElementById ('navigation');
+var planetName = document.getElementById ('planet_name');
+var lookSunButton = document.getElementById ('look_sun_button');
 
 // Camera control parameters
 var trackLeftRight = 0;
@@ -108,49 +114,47 @@ var fovMin = 10,
   pitchAngleMin = 0;
 
 // Mouse interaction parameters
-var lastX = 0,
-  lastY = 0;
-var dMouseX = 0,
-  dMouseY = 0;
+var lastX = 0, lastY = 0;
+var dMouseX = 0, dMouseY = 0;
 var trackingMouseMotion = false;
 
 // Kill
 var moving = true;
 
-function initCameraInteraction() {
-  var planetsPanel = document.getElementById("planets");
+function initCameraInteraction () {
+  var planetsPanel = document.getElementById ('planets');
 
-  orbits.forEach(function(orbit, index) {
-    var button = document.createElement("BUTTON");
-    var name = document.createTextNode(orbit.name);
-    button.appendChild(name);
-    button.onclick = function() {
-      selectPlanet(index);
+  orbits.forEach (function (orbit, index) {
+    var button = document.createElement ('BUTTON');
+    var name = document.createTextNode (orbit.name);
+    button.appendChild (name);
+    button.onclick = function () {
+      selectPlanet (index);
     };
-    planetsPanel.appendChild(button);
+    planetsPanel.appendChild (button);
   });
 
-  var freeButton = document.createElement("BUTTON");
-  var text = document.createTextNode("FREE");
-  freeButton.appendChild(text);
-  freeButton.onclick = function() {
-    freeCamera();
+  var freeButton = document.createElement ('BUTTON');
+  var text = document.createTextNode ('FREE');
+  freeButton.appendChild (text);
+  freeButton.onclick = function () {
+    freeCamera ();
   };
-  planetsPanel.appendChild(freeButton);
+  planetsPanel.appendChild (freeButton);
 
-  initMouseMotionCallback();
-  initKeyboardCallback();
-  initWheelCallback();
+  initMouseMotionCallback ();
+  initKeyboardCallback ();
+  initWheelCallback ();
 }
 
-function moveCamera() {
+function moveCamera () {
   if (free) {
     // Apply movemets registered from mouse or keyboard
     if (craneUpDown != 0 || trackLeftRight != 0) {
       moveVector = [-trackLeftRight, craneUpDown];
-      [tx, tz] = sum2dVectors(
+      [tx, tz] = sum2dVectors (
         [tx, tz],
-        rotate2dVector(moveVector, -yawAngle, 1.0)
+        rotate2dVector (moveVector, -yawAngle, 1.0)
       );
       craneUpDown = 0;
       trackLeftRight = 0;
@@ -162,7 +166,7 @@ function moveCamera() {
         case 0:
           if (distance > zoomPrecision) {
             // Zoom faster when you zoom out a lot
-            distance -= (pushInPullOut * distance) / zoomPrecision;
+            distance -= pushInPullOut * distance / zoomPrecision;
           } else {
             distance -= pushInPullOut;
           }
@@ -198,16 +202,16 @@ function moveCamera() {
     }
 
     // Compute t and u
-    tc = rotate3dVector(tcDefault, yawAngle, pitchAngle, distance);
+    tc = rotate3dVector (tcDefault, yawAngle, pitchAngle, distance);
     cx = tx + tc[0];
     cy = ty + tc[1];
     cz = tz + tc[2];
 
-    [ux, uy, uz] = rotate3dVector(cuDefault, yawAngle, pitchAngle, 1.0);
+    [ux, uy, uz] = rotate3dVector (cuDefault, yawAngle, pitchAngle, 1.0);
   } else {
     // POV is inside one planet
-    var pw = utils.multiplyMatrixVector(
-      utils.transposeMatrix(orbits[planetSelected].worldMatrix),
+    var pw = utils.multiplyMatrixVector (
+      utils.transposeMatrix (orbits[planetSelected].worldMatrix),
       [px, py, pz, 1.0]
     );
     cx = pw[0];
@@ -222,91 +226,107 @@ function moveCamera() {
       ux = 0.0;
       uy = 1.0;
       uz = 0.0;
-    } else {
-      ct = rotate3dVector(ctLockedDefault, yawAngle, pitchAngle, 1.0);
-      [tx, ty, tz] = sum3dVectors([cx, cy, cz], ct);
 
-      [ux, uy, uz] = rotate3dVector(cuLockedDefault, yawAngle, pitchAngle, 1.0);
+      pitchAngle = 0;
+      yawAngle = angleBetween2dVectors ([1.0, 0.0], [-cz, -cx]);
+    } else {
+      ct = rotate3dVector (ctLockedDefault, yawAngle, pitchAngle, 1.0);
+      [tx, ty, tz] = sum3dVectors ([cx, cy, cz], ct);
+
+      [ux, uy, uz] = rotate3dVector (
+        cuLockedDefault,
+        yawAngle,
+        pitchAngle,
+        1.0
+      );
+    }
+
+    // Zoom
+    if (pushInPullOut != 0) {
+      fov -= pushInPullOut;
+      pushInPullOut = 0;
     }
   }
 
-  limit();
+  limit ();
 
   // Recompute camera matrices
   cameraPosition = [cx, cy, cz];
   target = [tx, ty, tz];
   up = [ux, uy, uz];
 
-  projectionMatrix = utils.MakePerspective(
+  projectionMatrix = utils.MakePerspective (
     fov,
     gl.canvas.width / gl.canvas.height,
     nearPlane,
     farPlane
   );
 
-  var cameraMatrix = utils.LookAt(cameraPosition, target, up);
+  var cameraMatrix = utils.LookAt (cameraPosition, target, up);
 
-  viewMatrix = utils.invertMatrix(cameraMatrix);
+  viewMatrix = utils.invertMatrix (cameraMatrix);
 
-  viewProjectionMatrix = utils.multiplyMatrices(projectionMatrix, viewMatrix);
+  viewProjectionMatrix = utils.multiplyMatrices (projectionMatrix, viewMatrix);
 
-  printInfo();
+  printInfo ();
 }
 
-function printInfo() {
+function printInfo () {
   // Print camera values on screen
   info.innerHTML =
-    "cx: " +
-    cx.toFixed(2) +
-    "<br>cy: " +
-    cy.toFixed(2) +
-    "<br>cz: " +
-    cz.toFixed(2) +
-    "<br>tx: " +
-    tx.toFixed(2) +
-    "<br>ty: " +
-    ty.toFixed(2) +
-    "<br>tz: " +
-    tz.toFixed(2) +
-    "<br>ux: " +
-    ux.toFixed(2) +
-    "<br>uy: " +
-    uy.toFixed(2) +
-    "<br>uz: " +
-    uz.toFixed(2) +
-    "<br>fov: " +
-    fov.toFixed(2) +
-    "<br>step: " +
-    step.toFixed(1) +
-    "<br>selected: " +
+    'cx: ' +
+    cx.toFixed (2) +
+    '<br>cy: ' +
+    cy.toFixed (2) +
+    '<br>cz: ' +
+    cz.toFixed (2) +
+    '<br>tx: ' +
+    tx.toFixed (2) +
+    '<br>ty: ' +
+    ty.toFixed (2) +
+    '<br>tz: ' +
+    tz.toFixed (2) +
+    '<br>ux: ' +
+    ux.toFixed (2) +
+    '<br>uy: ' +
+    uy.toFixed (2) +
+    '<br>uz: ' +
+    uz.toFixed (2) +
+    '<br>fov: ' +
+    fov.toFixed (2) +
+    '<br>step: ' +
+    step.toFixed (1) +
+    '<br>selected: ' +
     selected +
-    "<br>zoom band: " +
+    '<br>zoom band: ' +
     zoomBand +
-    "<br>yaw angle: " +
-    yawAngle +
-    "<br>pitch angle: " +
-    pitchAngle +
-    "<br>moving: " +
-    moving;
+    '<br>yaw angle: ' +
+    yawAngle.toFixed(2) +
+    '<br>pitch angle: ' +
+    pitchAngle.toFixed(2) +
+    '<br>moving: ' +
+    moving +
+    '<br>look at the sun: ' +
+    lookToTheSun;
 }
 
 // Avoid breking the limits
-function limit() {
-  fov = Math.min(fov, fovMax);
-  fov = Math.max(fov, fovMin);
-  tx = Math.min(txMax, Math.max(tx, txMin));
-  tz = Math.min(tzMax, Math.max(tz, tzMin));
+function limit () {
+  fov = Math.min (fov, fovMax);
+  fov = Math.max (fov, fovMin);
+  tx = Math.min (txMax, Math.max (tx, txMin));
+  tz = Math.min (tzMax, Math.max (tz, tzMin));
 }
 
 // Register mouse callback functions
-function initMouseMotionCallback() {
+function initMouseMotionCallback () {
   // If a mouse button is pressed, save the current mouse location
   // and start tracking mouse motion.
-  canvas.onmousedown = function(event) {
+  canvas.onmousedown = function (event) {
     var x = event.clientX;
     var y = event.clientY;
 
-    var rect = event.target.getBoundingClientRect();
+    var rect = event.target.getBoundingClientRect ();
     // Check if the mouse cursor is in canvas.
     if (rect.left <= x && rect.right > x && rect.top <= y && rect.bottom > y) {
       lastX = x;
@@ -316,13 +336,13 @@ function initMouseMotionCallback() {
   };
 
   // If the mouse button is release, stop tracking mouse motion.
-  canvas.onmouseup = function(event) {
+  canvas.onmouseup = function (event) {
     trackingMouseMotion = false;
   };
 
   // Calculate how far the mouse cusor has moved and convert the mouse motion
   // to rotation angles.
-  canvas.onmousemove = function(event) {
+  canvas.onmousemove = function (event) {
     var x = event.clientX;
     var y = event.clientY;
 
@@ -339,9 +359,9 @@ function initMouseMotionCallback() {
         // Add the mouse motion to the current rotation angle so that the rotation
         // is added to the previous rotations.
         // Use scale to control the speed of the rotation.
-        trackLeftRight -= (((scale * dMouseX * cy) / 20) * fov) / 60;
+        trackLeftRight -= scale * dMouseX * cy / 20 * fov / 60;
 
-        craneUpDown += (((scale * dMouseY * cy) / 20) * fov) / 60;
+        craneUpDown += scale * dMouseY * cy / 20 * fov / 60;
       } else {
         // For camera pitch and yaw motions
         scale = 30;
@@ -351,8 +371,8 @@ function initMouseMotionCallback() {
         yawAngle += scale * dMouseX;
 
         pitchAngle += scale * dMouseY;
-        pitchAngle = Math.max(
-          Math.min(pitchAngle, pitchAngleMax),
+        pitchAngle = Math.max (
+          Math.min (pitchAngle, pitchAngleMax),
           pitchAngleMin
         );
       }
@@ -365,8 +385,8 @@ function initMouseMotionCallback() {
 }
 
 // Register a keyboard callback function.
-function initKeyboardCallback() {
-  document.onkeydown = function(event) {
+function initKeyboardCallback () {
+  document.onkeydown = function (event) {
     switch (event.keyCode) {
       case 81: // Q
         animated = !animated;
@@ -387,14 +407,14 @@ function initKeyboardCallback() {
         break;
       case 107: // +
         fov -= step;
-        fov = Math.max(fov, fovMin); // lower limit of fov
+        fov = Math.max (fov, fovMin); // lower limit of fov
         if (zoomBand == 0) {
           defaultFov = fov;
         }
         break;
       case 109: // -
         fov += step;
-        fov = Math.min(fov, fovMax); // upper limit of fov
+        fov = Math.min (fov, fovMax); // upper limit of fov
         if (zoomBand == 0) {
           defaultFov = fov;
         }
@@ -480,34 +500,32 @@ function initKeyboardCallback() {
         break;
       case 66: // B
         selection = 0;
-        selected = "X";
+        selected = 'X';
         break;
       case 78: // N
         selection = 1;
-        selected = "Y";
+        selected = 'Y';
         break;
       case 77: // M
         selection = 2;
-        selected = "Z";
+        selected = 'Z';
         break;
-
       // Change step size
       case 80: // P
         step += 0.5;
         break;
       case 79: // O
         step -= 0.5;
-        step = Math.max(step, 0.5);
+        step = Math.max (step, 0.5);
         break;
-
       // Angle
       case 87: // W
         pitchAngle -= angleStep;
-        pitchAngle = Math.max(pitchAngle, pitchAngleMin);
+        pitchAngle = Math.max (pitchAngle, pitchAngleMin);
         break;
       case 83: // S
         pitchAngle += angleStep;
-        pitchAngle = Math.min(pitchAngle, pitchAngleMax);
+        pitchAngle = Math.min (pitchAngle, pitchAngleMax);
         break;
       case 65: // A
         yawAngle += angleStep;
@@ -521,16 +539,14 @@ function initKeyboardCallback() {
           yawAngle += 360;
         }
         break;
-
       // Change step size
       case 76: // L
-        moveCamera();
+        moveCamera ();
         break;
       case 75: // K
         moving = !moving;
-        printInfo();
+        printInfo ();
         break;
-
       // Look to the Sun
       case 49: // 1
         lookToTheSun = !lookToTheSun;
@@ -542,34 +558,42 @@ function initKeyboardCallback() {
 }
 
 // Init wheel interation for zooming
-function initWheelCallback() {
-  document.onwheel = function(event) {
+function initWheelCallback () {
+  document.onwheel = function (event) {
     pushInPullOut -= event.deltaY * 0.05;
   };
 }
 
-function selectPlanet(n) {
-  console.log("Selected planet number " + n + ": " + orbits[n].name);
+function selectPlanet (n) {
+  console.log ('Selected planet number ' + n + ': ' + orbits[n].name);
   py = 0.0;
   pz = 0.0;
   planetSelected = n;
-  nearPlane = 12.0;
+  nearPlane = planetScales[n];
   yawAngle = 0.0;
   pitchAngle = 0.0;
   pitchAngleMax = 45;
   pitchAngleMin = -45;
   free = false;
   if (n == 0) {
+    // Sun
     px = 0.0;
+    lookSunButton.style.visibility = 'hidden';
+    lookToTheSun = false;
   } else {
     px = orbitScales[n] * d + sunD;
+    lookSunButton.style.visibility = 'visible';
   }
+  navigation.style.visibility = 'visible';
+  planetName.innerHTML = orbits[n].name;
 }
 
-function freeCamera() {
-  console.log("CAMERA FREE!!");
+function freeCamera () {
+  console.log ('CAMERA FREE!!');
   pitchAngleMax = 85;
   pitchAngleMin = 0;
   nearPlane = 1.0;
+  fov = DEFAULT_FOV;
   free = true;
+  navigation.style.visibility = 'hidden';
 }
