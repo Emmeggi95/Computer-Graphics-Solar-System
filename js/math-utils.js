@@ -41,5 +41,17 @@ function angleBetween2dVectors(v1, v2) {
     var m1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1]);
     var m2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1]);
     var dot = v1[0] * v2[0] + v1[1] * v2[1];
-    return Math.acos(dot / (m1 * m2));
+    return angle = Math.acos(dot / (m1 * m2));
+}
+
+function angleFromHorizontalAxis(v) {
+    if(v[1] < 0){
+        return Math.PI * 2 - angleBetween2dVectors([1.0, 0.0], v);
+    } else {
+        return angleBetween2dVectors([1.0, 0.0], v);
+    }
+}
+
+function radToDeg(angle) {
+    return angle * 180 / Math.PI;
 }

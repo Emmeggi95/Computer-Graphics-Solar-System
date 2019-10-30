@@ -17,10 +17,6 @@
         + -   &#60- change FOV<br>
         (if in zoom band 0,<br>
         change default FOV)<br>
-        Change values using:<br>
-        T Y U &#60- increase c,t,u<br>
-        G H J &#60- decrease c,t,u<br>
-        B N M &#60- select x,y,z<br>
         O P &#60- change step size
         
     </div>
@@ -34,8 +30,8 @@
     <div class="absolute bottom" id="navigation" style="visibility: hidden;">
         <h3 id="planet_name"></h3>
     <button id="look_sun_button" onclick="
-    lookToTheSun = !lookToTheSun;
-    if(lookToTheSun){
+    lookAtTheSun = !lookAtTheSun;
+    if(lookAtTheSun){
         lookSunButton.style.backgroundColor = 'cyan';
     } else {
         lookSunButton.style.backgroundColor = '';
