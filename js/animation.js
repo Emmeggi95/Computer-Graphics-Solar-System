@@ -15,7 +15,6 @@ var maxMeInfluence = 0.2;
 var increasingShine = true;
 var stepShine = 0.001;
 
-
 function stoppableAnimations() {
   if(animated) {
     revolutionMovement();
@@ -123,7 +122,6 @@ function shine() {
       increasingShine = true;
     }
   }
-
 }
 
 

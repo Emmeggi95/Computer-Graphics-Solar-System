@@ -72,14 +72,14 @@ function renderObjects () {
   
   // Set constant shader values
   gl.uniform3fv (alColorLoc, alColor);
-  gl.uniform1f (alInfluenceLoc, alInfluence);
+  
   gl.uniform3fv (plPositionLoc, plPosition);
-  gl.uniform3fv (plColorLoc, plColor);
+  
   gl.uniform1f (plTargetLoc, plTarget);
   gl.uniform1f (plDecayLoc, plDecay);
   gl.uniform3fv(eyePositionLoc, cameraPosition);
   gl.uniform1f(mSpecPowerLoc, mSpecPower);
-  gl.uniform4fv(mSpecColorLoc, mSpecColor);
+  
   gl.uniform3fv(targetPositionLoc, target);
 
   // Set values for each object
@@ -119,6 +119,16 @@ function renderObjects () {
       gl.uniform3fv (meColorLoc, darkMaterialColor);
     }
     gl.uniform1f (meInfluenceLoc, meInfluence);
+
+    if(index == objects.length - 1) { // Stars background
+      gl.uniform1f (alInfluenceLoc, 1.0);
+      gl.uniform3fv (plColorLoc, [0.0, 0.0, 0.0]);
+      gl.uniform4fv(mSpecColorLoc, [0.0, 0.0, 0.0, 0.0]);
+    } else {
+      gl.uniform1f (alInfluenceLoc, alInfluence);
+      gl.uniform3fv (plColorLoc, plColor);
+      gl.uniform4fv(mSpecColorLoc, mSpecColor);
+    }
 
     // Bind VAO
     gl.bindVertexArray (object.drawInfo.vertexArray);

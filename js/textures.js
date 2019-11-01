@@ -14,7 +14,8 @@ var fileNames = [
   "Jupiter.jpg",
   "Saturn.jpg",
   "Uranus.jpg",
-  "Neptune.jpg"
+  "Neptune.jpg",
+  "StarsMilkyWay.jpg"
 ];
 
 var textures = [];

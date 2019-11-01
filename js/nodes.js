@@ -70,7 +70,8 @@ var sunNode,
   jupiterNode,
   saturnNode,
   uranusNode,
-  neptuneNode;
+  neptuneNode,
+  starsNode;
 
 // Units of measure
 var d = 6; //distance mercury-sun
@@ -222,6 +223,16 @@ function buildSceneGraph() {
     vertexArray: vao
   };
 
+  starsNode = new Node();
+  starsNode.localMatrix = utils.MakeScaleMatrix(200 * d, 2, 2);
+  starsNode.drawInfo = {
+    materialColor: [0.2, 0.5, 0.8],
+    programInfo: program,
+    bufferLength: indices.length,
+    vertexArray: vao
+  };
+
+
   // Build the logical tree
   sunNode.setParent(sunOrbitNode);
   mercuryOrbitNode.setParent(sunOrbitNode);
@@ -242,6 +253,7 @@ function buildSceneGraph() {
   uranusNode.setParent(uranusOrbitNode);
   neptuneOrbitNode.setParent(sunOrbitNode);
   neptuneNode.setParent(neptuneOrbitNode);
+  starsNode.setParent(sunOrbitNode);
 
   // Define the objects to draw
   objects = [
@@ -254,7 +266,8 @@ function buildSceneGraph() {
     jupiterNode,
     saturnNode,
     uranusNode,
-    neptuneNode
+    neptuneNode,
+    starsNode
   ];
 
   // Save the orbits in the array
