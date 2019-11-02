@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,36 +8,53 @@
     <title>Solar System</title>
     <link rel='stylesheet' type='text/css' href='style.css'>
 </head>
+
 <body>
     <canvas id='c'></canvas>
-    <div class="absolute topleft" id="info"></div>
+    <div class='absolute topleft' id='debug_container' style='
+    background-color: transparent;
+    border: transparent;'>
+        <input type='checkbox' id='debug' onclick='
+            if(debugCheckbox.checked) {
+                debugPanel.style.visibility = "visible";
+                debugContainer.style.backgroundColor = "";
+                debugContainer.style.border = "";
+            } else {
+                debugPanel.style.visibility = "hidden";
+                debugContainer.style.backgroundColor = "transparent";
+                debugContainer.style.border = "transparent";
+            }
+            '>Debug</input>
+        <div id='hidden_debug' style="visibility: hidden;">
+            <p>
+                Use O, P to<br>change step<br>and speed size.<br>
+                Use + and - <br>to change FOV.<br>
+                (if in zoom band 0,<br>
+                change default FOV)<br>
+            </p>
+            <div id="info"></div>
+        </div>
+    </div>
     <div class="absolute bottomleft" id="instructions">
-        Mouse/arrows: move around<br>
-        Wheel: zoom<br>
-        Q: stop/resume animation<br>
-        + -   &#60- change FOV<br>
-        (if in zoom band 0,<br>
-        change default FOV)<br>
-        O P &#60- change step size
-        
+        Drag with mouse or use arrows to rotate view.<br>
+        Use shift, space bar or mouse wheel to zoom.<br>
+        Use WASD to move around.<br>
+        Use Q to stop/resume animation<br>
     </div>
-    <div class="absolute topright" id="planets"></div>
-   <div class = "absolute bottomright" id = "speed"> 
-    <div id="slider"> 0
-        <input id = "slider1" type = "range" min = "0" max = "1" step = "0.1" value = "1" onchange ="updateSpeedInfluence(this.value);"/> 1 <br/>
-        <p><b>Planet Revolution Speed</b></p>
+    <div class="absolute topright" id="planets" style='
+    background-color: transparent;
+    border: transparent;'></div>
+    <div class="absolute bottomright" id="speed">
+        <div id="slider"> 0
+            <input id="slider1" type="range" min="0" max="1" step="0.1" value="1"
+                onchange="updateSpeedInfluence(this.value);" /> 1 <br />
+            <p><b>Planet Revolution Speed</b></p>
+        </div>
     </div>
-</div>
     <div class="absolute bottom" id="navigation" style="visibility: hidden;">
-        <h3 id="planet_name"></h3>
-    <button id="look_sun_button" onclick="
-    lookAtTheSun = !lookAtTheSun;
-    if(lookAtTheSun){
-        lookSunButton.style.backgroundColor = 'cyan';
-    } else {
-        lookSunButton.style.backgroundColor = '';
-    }
-    ">Look at the Sun</button></div>
+        <p id="planet_name"></p>
+        <div id='fix_selection'></div>        
+    </div>
     <script src="js/utils.js"></script>
     <script src="js/math-utils.js"></script>
     <script src="js/webgl.js"></script>
@@ -47,6 +65,7 @@
     <script src="js/camera.js"></script>
     <script src="js/animation.js"></script>
     <script src="js/draw.js"></script>
-    <script src="app.js"></script>      
+    <script src="app.js"></script>
 </body>
+
 </html>

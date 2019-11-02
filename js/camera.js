@@ -8,7 +8,7 @@
  * Camera matrices are computed every time the scene is drawn on the screen (moveCamera() is called by draw.js).
  *
  * MOVING
- * You can move through the scene dragging it with the mouse or using arrows. To move up/down, left/right the values of tz and tx are changed and the camera (cz, cx) follows them.
+ * You can move through the scene using WASD, shift, space bar and mouse wheel. To move up/down, left/right the values of tz and tx are changed and the camera (cz, cx) follows them.
  *
  * ZOOM
  * You can zoom in and out using mouse wheel. The values of cy and fov are changed to set zoom.
@@ -28,15 +28,16 @@
  * 2) CAMERA ANCHORED
  *    The camera is anchored to a planet and rotates around the Sun togheter with it.
  *    The user can direct the look and zoom using the mouse.
- * 3) CAMERA ANCHORED, LOOKING AT THE SUN
- *    The camera is anchored to a planet like in the previous case, but the camera is locked looking at the Sun.
+ * 3) CAMERA ANCHORED, LOCKED TARGET
+ *    The camera is anchored to a planet like in the previous case, but the camera is locked looking at a fixed target.
  *    The user can only zoom in and out using the mouse wheel.
  *
  */
 
 // Constant values
-const DEFAULT_FOV = 60,
-  DEFAULT_DISTANCE = 50;
+const DEFAULT_FOV = 60, DEFAULT_DISTANCE = 50;
+const ZOOM_PRECISION = 100; // Under this value the zoom speed is costant, over this value it accelerates.
+const DEFAULT_ZOOM_STEP = 5.0, DEFAULT_ZOOM_SPEED = 1.0;
 
 // Camera vaules
 var cx = 0.0,
@@ -56,19 +57,39 @@ var up;
 var projectionMatrix, viewProjectionMatrix;
 
 // HTML elements
-var info = document.getElementById("info"); // Top left panels which shows some camera values for debug purpose.
-var navigation = document.getElementById("navigation"); // Bottom panel which appears when you anchor the camera to a planet.
-var planetName = document.getElementById("planet_name"); // Header to write the name of the planet on which the camera is anchored.
-var lookSunButton = document.getElementById("look_sun_button"); // Button to look at the Sun when the camera is anchored to a planet.
+var info = document.getElementById ('info'); // Top left panels which shows some camera values for debug purpose.
+var navigation = document.getElementById ('navigation'); // Bottom panel which appears when you anchor the camera to a planet.
+var planetName = document.getElementById ('planet_name'); // Header to write the name of the planet on which the camera is anchored.
+var fixSelection = document.getElementById ('fix_selection'); // Here will be shown the button to fix camera target.
+var debugContainer = document.getElementById ('debug_container'); // Container of checkbox and debug panel. The background is filled when debug is shown.
+var debugCheckbox = document.getElementById ('debug'); // Checkbox to show debug panel.
+var debugPanel = document.getElementById ('hidden_debug'); // Debug panel shown when debugCheckbox is checked.
+
+// Movement buffers
+var movementBuffer = [0.0, 0.0]; // Remaining horizontal movement to execute
+var zoomBuffer = 0.0; // Remaining vertical movement to execute
+var yawAngleBuffer = 0.0; // Remaining horizontal rotation
+var pitchAngleBuffer = 0.0; // Remaining vertical rotation
+var mouseXbuffer = 0.0; // Store the mouse movement
+var mouseYbuffer = 0.0;
+
+// Movement speeds
+var movementSpeed = 0.5; // Speed of horizontal movements expressed in units per tick
+var zoomSpeed = DEFAULT_ZOOM_SPEED; // Speed of vertical movements expressed in units per tick
+var angleSpeed = 1.0; // Speed of rotation expressed in degrees per tick
+
+// Movement steps
+var movementStep = 1.0; // Step used for camera movements with keyboard
+var zoomStep = DEFAULT_ZOOM_STEP;
+var angleStep = 5.0;
+var mouseScale = 30;
 
 // Camera control parameters
 var trackLeftRight = 0; // Move left and right
 var pushInPullOut = 0; // Move back and forth
 var craneUpDown = 0; // Zoom in/out
-
-var moveVector = [0.0, 0.0]; // Vector used to calculate movement on the x-z plane (for istance, with mouse). The vector is rotated considering the yawAngle
-
-var step = 0.5; // Step used for camera movements with keyboard
+var yawRotation = 0;
+var pitchRotation = 0;
 
 var fov = 60;
 var nearPlane = 1.0; // Changed when the POV is put inside a planet to avoid seeing the planet surface.
@@ -80,13 +101,9 @@ var zoomBand = 0;
 
 var animated = true; // Stop certain animations. See stoppableAnimations() in animation.js
 
-var zoomPrecision = 100; // Under this value the zoom speed is costant, over this value it accelerates.
-
 // Camera rotation
 var pitchAngle = 0.0; // Vertical rotation around x axis
 var yawAngle = 0.0; // Horizontal rotation around y axis
-
-var angleStep = 5;
 
 // The rotation is computed starting from default vectors
 var cuDefault = [0.0, 0.0, 1.0]; // Default c-u vector
@@ -98,7 +115,9 @@ var distance = 50; // Length of vector t-c. Used when the camera is free and the
 var planetSelected;
 var free = true; // False if the user selected a planet
 var px, py, pz; // The center of the planet to which the camera is anchored
-var lookAtTheSun = false; // Switch between free camera rotation or camera locked on the Sun where the camera is anchored to a planet.
+var fixedTarget = false; // Switch between free camera rotation or camera locked on the Sun where the camera is anchored to a planet.
+var targetSelected = 0;
+
 // Default vectors to calculate rotation when the camera is anchored to a planet and free to rotate
 var ctLockedDefault = [0.0, 0.0, 1.0];
 var cuLockedDefault = [0.0, 1.0, 0.0];
@@ -123,11 +142,10 @@ var fovMin = 10,
   pitchAngleMin = 0;
 
 // Mouse interaction parameters
-var lastX = 0,
-  lastY = 0;
-var dMouseX = 0,
-  dMouseY = 0;
+var lastX = 0, lastY = 0;
+var dMouseX = 0, dMouseY = 0;
 var trackingMouseMotion = false;
+var mouseReleased = true;
 
 // Kill
 var moving = true; // Interrupt/resume camera animation.
@@ -136,30 +154,30 @@ var moving = true; // Interrupt/resume camera animation.
  * Initialize camera intraction with keyboard, mouse and mouse wheel.
  */
 
-function initCameraInteraction() {
-  var planetsPanel = document.getElementById("planets");
+function initCameraInteraction () {
+  var planetsPanel = document.getElementById ('planets');
 
-  orbits.forEach(function(orbit, index) {
-    var button = document.createElement("BUTTON");
-    var name = document.createTextNode(orbit.name);
-    button.appendChild(name);
-    button.onclick = function() {
-      selectPlanet(index);
+  orbits.forEach (function (orbit, index) {
+    var button = document.createElement ('BUTTON');
+    var name = document.createTextNode (orbit.name);
+    button.appendChild (name);
+    button.onclick = function () {
+      selectPlanet (index);
     };
-    planetsPanel.appendChild(button);
+    planetsPanel.appendChild (button);
   });
 
-  var freeButton = document.createElement("BUTTON");
-  var text = document.createTextNode("FREE");
-  freeButton.appendChild(text);
-  freeButton.onclick = function() {
-    freeCamera();
+  var freeButton = document.createElement ('BUTTON');
+  var text = document.createTextNode ('FREE');
+  freeButton.appendChild (text);
+  freeButton.onclick = function () {
+    freeCamera ();
   };
-  planetsPanel.appendChild(freeButton);
+  planetsPanel.appendChild (freeButton);
 
-  initMouseMotionCallback();
-  initKeyboardCallback();
-  initWheelCallback();
+  initMouseMotionCallback ();
+  initKeyboardCallback ();
+  initWheelCallback ();
 }
 
 /**
@@ -167,203 +185,403 @@ function initCameraInteraction() {
  * Every time it is called, it computes the new camera position, based on user interaction or planet's movement, and recompute the view projection matrix.
  */
 
-function moveCamera() {
+function moveCamera () {
+  // BUFFER MOVEMENTS
+
+  // "Buffer" movemets registered from mouse or keyboard in movementBuffer
+  if (craneUpDown != 0 || trackLeftRight != 0) {
+    // If the already buffered movement is greater or equal to the defined movement size, don't update the buffer.
+    // This behaviour allows the movement to stop almost immediatly after the user releases the keyboard button.
+    if (vectorLength (movementBuffer) < movementStep) {
+      movementBuffer = sum2dVectors (
+        movementBuffer,
+        rotate2dVector ([-trackLeftRight, craneUpDown], -yawAngle, 1.0)
+      );
+    }
+    craneUpDown = 0;
+    trackLeftRight = 0;
+  }
+
+  // Buffer zoom
+  if (pushInPullOut != 0) {
+    if (Math.abs (zoomBuffer) < DEFAULT_ZOOM_STEP) {
+      zoomBuffer += pushInPullOut;
+    }
+    pushInPullOut = 0;
+  }
+
+  // Buffer rotation
+  if (yawRotation != 0) {
+    if (Math.abs (yawAngleBuffer) < angleStep) {
+      yawAngleBuffer += yawRotation;
+    }
+    yawRotation = 0;
+  }
+  if (pitchRotation != 0) {
+    if (Math.abs (pitchAngleBuffer) < angleStep) {
+      pitchAngleBuffer += pitchRotation;
+    }
+    pitchRotation = 0;
+  }
+
+  // EXECUTE MOVEMENTS
+
   if (free) {
     /**
      * VIEW MODE 1: CAMERA FREE
      */
-    // Apply movemets registered from mouse or keyboard
-    if (craneUpDown != 0 || trackLeftRight != 0) {
-      moveVector = [-trackLeftRight, craneUpDown];
-      [tx, tz] = sum2dVectors(
-        [tx, tz],
-        rotate2dVector(moveVector, -yawAngle, 1.0)
-      );
-      craneUpDown = 0;
-      trackLeftRight = 0;
-    }
-    // Zooming
-    if (pushInPullOut != 0) {
-      switch (zoomBand) {
-        // If you are between distance limits, change distance value (BAND 0)
-        case 0:
-          if (distance > zoomPrecision) {
-            // Zoom faster when you zoom out a lot
-            distance -= (pushInPullOut * distance) / zoomPrecision;
-          } else {
-            distance -= pushInPullOut;
-          }
-          if (distance < distanceMin) {
-            distance = distanceMin;
-            fov -= pushInPullOut;
-            zoomBand = -1;
-          } else if (distance > distanceMax) {
-            distance = distanceMax;
-            fov -= pushInPullOut;
-            zoomBand = 1;
-          }
-          break;
-        // Else, change fov value (BAND -1 AND 1)
-        case -1:
-          fov -= pushInPullOut;
-          if (fov > defaultFov) {
-            fov = defaultFov;
-            distance -= pushInPullOut;
-            zoomBand = 0;
-          }
-          break;
-        case 1:
-          fov -= pushInPullOut;
-          if (fov < defaultFov) {
-            fov = defaultFov;
-            distance -= pushInPullOut;
-            zoomBand = 0;
-          }
-          break;
-      }
-      pushInPullOut = 0;
-    }
 
-    // Compute t and u
-    tc = rotate3dVector(tcDefault, yawAngle, pitchAngle, distance);
+    rotateWithMouse ();
+
+    moveHorizontally ();
+
+    moveVertically ();
+
+    rotateCamera ();
+
+    // Compute t, u and c considering rotation (yawAngle and pitchAngle)
+
+    tc = rotate3dVector (tcDefault, yawAngle, pitchAngle, distance);
     cx = tx + tc[0];
     cy = ty + tc[1];
     cz = tz + tc[2];
 
-    [ux, uy, uz] = rotate3dVector(cuDefault, yawAngle, pitchAngle, 1.0);
+    [ux, uy, uz] = rotate3dVector (cuDefault, yawAngle, pitchAngle, 1.0);
   } else {
     /**
      * VIEW MODE 2 AND 3: CAMERA ANCHORED / ANCHORED LOOKING AT THE SUN
      */
-    // POV is inside one planet
-    var pw = utils.multiplyMatrixVector(
-      utils.transposeMatrix(orbits[planetSelected].worldMatrix),
+
+    // Compute the position of the planet selected (world matrix of that planet in this istant multiplied per its initial position)
+
+    var pw = utils.multiplyMatrixVector (
+      utils.transposeMatrix (orbits[planetSelected].worldMatrix),
       [px, py, pz, 1.0]
     );
-    cx = pw[0];
-    cy = pw[1];
-    cz = -pw[2];
 
-    if (lookAtTheSun) {
+    // Moon
+    if (planetSelected == 4) {
+      var earthPosition = utils.multiplyMatrixVector (
+        utils.transposeMatrix (orbits[3].worldMatrix),
+        [orbitScales[3] * d + sunD, 0.0, 0.0, 1.0]
+      );
+
+      cx = pw[0] + earthPosition[0];
+      cy = pw[1] + earthPosition[1];
+      cz = -pw[2] - earthPosition[2];
+    } else {
+      cx = pw[0];
+      cy = pw[1];
+      cz = -pw[2];
+    }
+
+    if (fixedTarget) {
       /**
        * VIEW MODE 3
        */
-      tx = 0.0;
-      ty = 0.0;
-      tz = 0.0;
+
+      // Fix t into the selected target and u directed upwards (along y)
+
+      switch (targetSelected) {
+        case 0:
+          // Sun
+          tx = 0.0;
+          ty = 0.0;
+          tz = 0.0;
+          break;
+        case 1:
+          // Earth
+          var earthPosition = utils.multiplyMatrixVector (
+            utils.transposeMatrix (orbits[3].worldMatrix),
+            [orbitScales[3] * d + sunD, 0.0, 0.0, 1.0]
+          );
+          tx = earthPosition[0];
+          ty = earthPosition[1];
+          tz = -earthPosition[2];
+          break;
+      }
 
       ux = 0.0;
       uy = 1.0;
       uz = 0.0;
 
+      // Set the pitchAngle to 0 and compute the current yawAngle (to give continuity to the transition between fixed target and free target).
+
       pitchAngle = 0;
-      yawAngle = radToDeg(angleFromHorizontalAxis([-cz, -cx]));
+      yawAngle = radToDeg (angleFromHorizontalAxis ([tz-cz, tx-cx]));
     } else {
       /**
        * VIEW MODE 2
        */
-      ct = rotate3dVector(ctLockedDefault, yawAngle, pitchAngle, 1.0);
-      [tx, ty, tz] = sum3dVectors([cx, cy, cz], ct);
 
-      [ux, uy, uz] = rotate3dVector(cuLockedDefault, yawAngle, pitchAngle, 1.0);
+      rotateWithMouse ();
+
+      rotateCamera ();
+
+      ct = rotate3dVector (ctLockedDefault, yawAngle, pitchAngle, 1.0);
+      [tx, ty, tz] = sum3dVectors ([cx, cy, cz], ct);
+
+      [ux, uy, uz] = rotate3dVector (
+        cuLockedDefault,
+        yawAngle,
+        pitchAngle,
+        1.0
+      );
     }
 
-    // Zoom
-    if (pushInPullOut != 0) {
-      fov -= pushInPullOut;
-      pushInPullOut = 0;
-    }
+    zoomOnlyFov ();
   }
 
   // Keep camera values between the bounds
-  limit();
+  limit ();
 
   // Recompute camera matrices
   cameraPosition = [cx, cy, cz];
   target = [tx, ty, tz];
   up = [ux, uy, uz];
 
-  projectionMatrix = utils.MakePerspective(
+  projectionMatrix = utils.MakePerspective (
     fov,
     gl.canvas.width / gl.canvas.height,
     nearPlane,
     farPlane
   );
 
-  var cameraMatrix = utils.LookAt(cameraPosition, target, up);
+  var cameraMatrix = utils.LookAt (cameraPosition, target, up);
 
-  viewMatrix = utils.invertMatrix(cameraMatrix);
+  viewMatrix = utils.invertMatrix (cameraMatrix);
 
-  viewProjectionMatrix = utils.multiplyMatrices(projectionMatrix, viewMatrix);
+  viewProjectionMatrix = utils.multiplyMatrices (projectionMatrix, viewMatrix);
 
   // Show camera values on the screen
-  printInfo();
+  printInfo ();
 }
+
+/**
+ * ----------------------------------------------------------------MOVEMENTS-----------------------------------------------------------------------
+ * The following functions are recursivelly called by moveCamera().
+ * They require to initialize movement buffers firts.
+ */
+
+/**
+ * Change angles moving mouse
+ */
+
+function rotateWithMouse () {
+  if (mouseXbuffer != 0 || mouseYbuffer != 0) {
+    yawAngle += mouseScale * mouseXbuffer;
+
+    pitchAngle += mouseScale * mouseYbuffer;
+    pitchAngle = Math.max (Math.min (pitchAngle, pitchAngleMax), pitchAngleMin);
+
+    if (mouseReleased) {
+      // Keep going
+    } else {
+      mouseXbuffer = 0.0;
+      mouseYbuffer = 0.0;
+    }
+  }
+}
+
+/**
+ * Move along x and z
+ */
+
+function moveHorizontally () {
+  if (!isNullVector (movementBuffer)) {
+    // Clean movement buffer
+    if (vectorLength (movementBuffer) < movementSpeed) {
+      movementBuffer = resizeVector (movementBuffer, 0.0);
+    } else {
+      var m = resizeVector (movementBuffer, movementSpeed);
+      tx += m[0];
+      tz += m[1];
+      cx += m[0];
+      cz += m[1];
+      movementBuffer = sum2dVectors (movementBuffer, scalarPerVector (-1, m));
+    }
+  }
+}
+
+/**
+ * Move along y
+ */
+
+function moveVertically () {
+  // Zoom faster when you zoom out a lot
+  if (distance > ZOOM_PRECISION && zoomBand == 0) {
+    var multiplier = distance / ZOOM_PRECISION;
+    zoomStep = DEFAULT_ZOOM_STEP * multiplier;
+    zoomSpeed = DEFAULT_ZOOM_SPEED * multiplier;
+  } else {
+    zoomStep = DEFAULT_ZOOM_STEP;
+    zoomSpeed = DEFAULT_ZOOM_SPEED;
+  }
+
+  // Zoom
+  if (zoomBuffer != 0.0) {
+    // Clean zoom buffer
+    if (Math.abs (zoomBuffer) < DEFAULT_ZOOM_SPEED) {
+      zoomBuffer = 0.0;
+    } else {
+      var m = Math.sign (zoomBuffer) * zoomSpeed;
+
+      switch (zoomBand) {
+        // If you are between distance limits, change distance value (BAND 0)
+        case 0:
+          distance -= m;
+          if (distance < distanceMin) {
+            distance = distanceMin;
+            fov -= m;
+            zoomBand = -1;
+          } else if (distance > distanceMax) {
+            distance = distanceMax;
+            fov -= m;
+            zoomBand = 1;
+          }
+          break;
+        // Else, change fov value (BAND -1 AND 1)
+        case -1:
+          fov -= m;
+          if (fov > defaultFov) {
+            fov = defaultFov;
+            distance -= m;
+            zoomBand = 0;
+          }
+          break;
+        case 1:
+          fov -= m;
+          if (fov < defaultFov) {
+            fov = defaultFov;
+            distance -= m;
+            zoomBand = 0;
+          }
+          break;
+      }
+
+      zoomBuffer -= m;
+    }
+  }
+}
+
+/**
+ * Zoom changing only fov and not cy (Used when c coordinates are anchored to a planet).
+ */
+
+function zoomOnlyFov () {
+  if (zoomBuffer != 0) {
+    fov -= zoomBuffer;
+    zoomBuffer = 0;
+  }
+}
+
+/**
+ * Cange yawAngle and pitchAngle
+ */
+
+function rotateCamera () {
+  if (yawAngleBuffer != 0) {
+    if (Math.abs (yawAngleBuffer) < angleSpeed) {
+      yawAngleBuffer = 0.0;
+    } else {
+      var m = Math.sign (yawAngleBuffer) * angleSpeed;
+      yawAngle -= m;
+      yawAngleBuffer -= m;
+    }
+  }
+
+  if (pitchAngleBuffer != 0) {
+    if (Math.abs (pitchAngleBuffer) < angleSpeed) {
+      pitchAngleBuffer = 0.0;
+    } else {
+      var m = Math.sign (pitchAngleBuffer) * angleSpeed;
+      pitchAngle -= m;
+      pitchAngle = Math.max (
+        pitchAngleMin,
+        Math.min (pitchAngleMax, pitchAngle)
+      );
+      pitchAngleBuffer -= m;
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------------------------------------------------------------
 
 /**
  * Debug function to show the values of some variables on the screen.
  */
 
-function printInfo() {
+function printInfo () {
   // Print camera values on screen
   info.innerHTML =
-    "cx: " +
-    cx.toFixed(2) +
-    "<br>cy: " +
-    cy.toFixed(2) +
-    "<br>cz: " +
-    cz.toFixed(2) +
-    "<br>tx: " +
-    tx.toFixed(2) +
-    "<br>ty: " +
-    ty.toFixed(2) +
-    "<br>tz: " +
-    tz.toFixed(2) +
-    "<br>ux: " +
-    ux.toFixed(2) +
-    "<br>uy: " +
-    uy.toFixed(2) +
-    "<br>uz: " +
-    uz.toFixed(2) +
-    "<br>fov: " +
-    fov.toFixed(2) +
-    "<br>step: " +
-    step.toFixed(1) +
-    "<br>zoom band: " +
+    'cx: ' +
+    cx.toFixed (2) +
+    '<br>cy: ' +
+    cy.toFixed (2) +
+    '<br>cz: ' +
+    cz.toFixed (2) +
+    '<br>tx: ' +
+    tx.toFixed (2) +
+    '<br>ty: ' +
+    ty.toFixed (2) +
+    '<br>tz: ' +
+    tz.toFixed (2) +
+    '<br>ux: ' +
+    ux.toFixed (2) +
+    '<br>uy: ' +
+    uy.toFixed (2) +
+    '<br>uz: ' +
+    uz.toFixed (2) +
+    '<br>fov: ' +
+    fov.toFixed (2) +
+    '<br>movement step: ' +
+    movementStep.toFixed (1) +
+    '<br>movement speed: ' +
+    movementSpeed.toFixed(1) +
+    '<br>zoom band: ' +
     zoomBand +
-    "<br>yaw angle: " +
-    yawAngle.toFixed(2) +
-    "<br>pitch angle: " +
-    pitchAngle.toFixed(2) +
-    "<br>moving: " +
+    '<br>yaw angle: ' +
+    yawAngle.toFixed (2) +
+    '<br>pitch angle: ' +
+    pitchAngle.toFixed (2) +
+    '<br>moving: ' +
     moving +
-    "<br>look at the sun: " +
-    lookAtTheSun;
+    '<br>look at the sun: ' +
+    fixedTarget;
 }
 
 /**
  *  Function called in moveCamera() to keep the camera values between defined bounds.
  */
 
-function limit() {
-  fov = Math.min(fov, fovMax);
-  fov = Math.max(fov, fovMin);
-  tx = Math.min(txMax, Math.max(tx, txMin));
-  tz = Math.min(tzMax, Math.max(tz, tzMin));
+function limit () {
+  fov = Math.min (fov, fovMax);
+  fov = Math.max (fov, fovMin);
+  tx = Math.min (txMax, Math.max (tx, txMin));
+  tz = Math.min (tzMax, Math.max (tz, tzMin));
 }
+
+/**
+ * -----------------------------------------------------------------------USER INTERACTION-----------------------------------------------------------------
+ */
 
 /**
  * Function to register mouse callback functions
  */
 
-function initMouseMotionCallback() {
+function initMouseMotionCallback () {
   // If a mouse button is pressed, save the current mouse location
   // and start tracking mouse motion.
-  canvas.onmousedown = function(event) {
+  canvas.onmousedown = function (event) {
+    mouseReleased = false;
+
+    mouseXbuffer = 0.0;
+    mouseYbuffer = 0.0;
+
     var x = event.clientX;
     var y = event.clientY;
 
-    var rect = event.target.getBoundingClientRect();
+    var rect = event.target.getBoundingClientRect ();
     // Check if the mouse cursor is in canvas.
     if (rect.left <= x && rect.right > x && rect.top <= y && rect.bottom > y) {
       lastX = x;
@@ -373,46 +591,25 @@ function initMouseMotionCallback() {
   };
 
   // If the mouse button is release, stop tracking mouse motion.
-  canvas.onmouseup = function(event) {
+  canvas.onmouseup = function (event) {
+    mouseReleased = true;
     trackingMouseMotion = false;
   };
 
   // Calculate how far the mouse cusor has moved and convert the mouse motion
   // to rotation angles.
-  canvas.onmousemove = function(event) {
+  canvas.onmousemove = function (event) {
     var x = event.clientX;
     var y = event.clientY;
 
     if (trackingMouseMotion) {
-      var scale = 1;
       // Calculate how much the mouse has moved along X and Y axis, and then
       // normalize them based on the canvas' width and height.
       dMouseX = (x - lastX) / canvas.width;
       dMouseY = (y - lastY) / canvas.height;
 
-      if (free) {
-        // For camera pitch and yaw motions
-        scale = 30;
-        // Add the mouse motion to the current rotation angle so that the rotation
-        // is added to the previous rotations.
-        // Use scale to control the speed of the rotation.
-        trackLeftRight -= (((scale * dMouseX * cy) / 20) * fov) / 60;
-
-        craneUpDown += (((scale * dMouseY * cy) / 20) * fov) / 60;
-      } else {
-        // For camera pitch and yaw motions
-        scale = 30;
-        // Add the mouse motion to the current rotation angle so that the rotation
-        // is added to the previous rotations.
-        // Use scale to control the speed of the rotation.
-        yawAngle += scale * dMouseX;
-
-        pitchAngle += scale * dMouseY;
-        pitchAngle = Math.max(
-          Math.min(pitchAngle, pitchAngleMax),
-          pitchAngleMin
-        );
-      }
+      mouseXbuffer += mouseScale * dMouseX;
+      mouseYbuffer += mouseScale * dMouseY;
     }
 
     // Save the current mouse location in order to calculate the next mouse motion.
@@ -425,78 +622,79 @@ function initMouseMotionCallback() {
  * Function to interact with keyboard
  */
 
-function initKeyboardCallback() {
-  document.onkeydown = function(event) {
+function initKeyboardCallback () {
+  document.onkeydown = function (event) {
     switch (event.keyCode) {
+      // Move with WASD
+      case 87: // W
+        craneUpDown += movementStep;
+        break;
+      case 83: // S
+        craneUpDown -= movementStep;
+        break;
+      case 65: // A
+        trackLeftRight -= movementStep;
+        break;
+      case 68: // D
+        trackLeftRight += movementStep;
+        break;
+      // Space bar and shift to move up and down (zoom)
+      case 16: // Shift
+        pushInPullOut += zoomStep;
+        break;
+      case 32: // Space
+        pushInPullOut -= zoomStep;
+        break;
       case 81: // Q
         animated = !animated;
         break;
+      // Rotate camera with arrows
       case 37: // Arrow left
-        trackLeftRight -= step;
+        yawRotation -= angleStep;
         break;
       case 38: // Arrow up
-        craneUpDown += step;
+        pitchRotation -= angleStep;
         break;
       case 39: // Arrow right
-        trackLeftRight += step;
+        yawRotation += angleStep;
         break;
       case 40: // Arrow down
-        craneUpDown -= step;
+        pitchRotation += angleStep;
         break;
       case 107: // +
-        fov -= step;
-        fov = Math.max(fov, fovMin); // lower limit of fov
+        fov -= movementStep;
+        fov = Math.max (fov, fovMin); // lower limit of fov
         if (zoomBand == 0) {
           defaultFov = fov;
         }
         break;
       case 109: // -
-        fov += step;
-        fov = Math.min(fov, fovMax); // upper limit of fov
+        fov += movementStep;
+        fov = Math.min (fov, fovMax); // upper limit of fov
         if (zoomBand == 0) {
           defaultFov = fov;
         }
         break;
       // Change step size
       case 80: // P
-        step += 0.5;
+        movementStep += 0.2;
+        movementSpeed += 0.1;
         break;
       case 79: // O
-        step -= 0.5;
-        step = Math.max(step, 0.5);
-        break;
-      // Angle
-      case 87: // W
-        pitchAngle -= angleStep;
-        pitchAngle = Math.max(pitchAngle, pitchAngleMin);
-        break;
-      case 83: // S
-        pitchAngle += angleStep;
-        pitchAngle = Math.min(pitchAngle, pitchAngleMax);
-        break;
-      case 65: // A
-        yawAngle += angleStep;
-        if (yawAngle >= 360) {
-          yawAngle -= 360;
-        }
-        break;
-      case 68: // D
-        yawAngle -= angleStep;
-        if (yawAngle < 0) {
-          yawAngle += 360;
-        }
+        movementStep -= 0.2;
+        movementSpeed -= 0.1;
         break;
       // Change step size
       case 76: // L
-        moveCamera();
+        moveCamera ();
         break;
       case 75: // K
         moving = !moving;
-        printInfo();
+        printInfo ();
         break;
       // Look to the Sun
       case 49: // 1
-        lookAtTheSun = !lookAtTheSun;
+        fixedTarget = !fixedTarget;
         break;
       default:
         return;
@@ -507,18 +705,22 @@ function initKeyboardCallback() {
 /**
  * Function to interact with the mouse wheel.
  */
-function initWheelCallback() {
-  document.onwheel = function(event) {
+function initWheelCallback () {
+  document.onwheel = function (event) {
     pushInPullOut -= event.deltaY * 0.05;
   };
 }
+
+/**
+ * ------------------------------------------------------------------------------VIEW MODES-------------------------------------------------------------------
+ */
 
 /**
  * Function to select a planet to place the camera, called when a button with the name of a planet on the screen is pressed.
  * @param {*} n is the planet number
  */
 
-function selectPlanet(n) {
+function selectPlanet (n) {
   py = 0.0;
   pz = 0.0;
   planetSelected = n;
@@ -528,16 +730,74 @@ function selectPlanet(n) {
   pitchAngleMax = 45;
   pitchAngleMin = -45;
   free = false;
+
+  var buttons = [];
+
+  // Create button to fix target in the Sun
+  var sunButton = document.createElement ('BUTTON');
+  sunButton.appendChild (document.createTextNode ('Sun'));
+  sunButton.onclick = function () {
+    if(targetSelected == 0) {
+      fixedTarget = !fixedTarget;
+    } else {
+      targetSelected = 0;
+      fixedTarget = true;
+      buttons.forEach( function (button) {
+        button.style.backgroundColor = '';
+      })
+    }    
+    
+    if (fixedTarget) {
+      this.style.backgroundColor = 'cyan';
+    } else {
+      this.style.backgroundColor = '';
+    }
+  };
+
   if (n == 0) {
     // Sun
     px = 0.0;
-    lookSunButton.style.visibility = "hidden";
-    lookAtTheSun = false;
+    fixSelection.innerHTML = '';
+    fixedTarget = false;
+  } else if (n == 4) {
+    // Moon
+    px = orbitScales[4] * d;
+
+    // Create button to fix target in the earth
+    var earthButton = document.createElement ('BUTTON');
+    earthButton.appendChild (document.createTextNode ('Earth'));
+    earthButton.onclick = function () {
+      if(targetSelected == 1) {
+        fixedTarget = !fixedTarget;
+      } else {
+        targetSelected = 1;
+        fixedTarget = true;
+        buttons.forEach( function (button) {
+          button.style.backgroundColor = '';
+        })
+      }
+
+      if (fixedTarget) {
+        this.style.backgroundColor = 'cyan';
+      } else {
+        this.style.backgroundColor = '';
+      }
+    };
+
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (sunButton);
+    fixSelection.appendChild (earthButton);
+    buttons.push(sunButton);
+    buttons.push(earthButton);
   } else {
+    // Other planets
     px = orbitScales[n] * d + sunD;
-    lookSunButton.style.visibility = "visible";
+
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (sunButton);
+    buttons.push(sunButton);
   }
-  navigation.style.visibility = "visible";
+  navigation.style.visibility = 'visible';
   planetName.innerHTML = orbits[n].name;
 }
 
@@ -546,7 +806,7 @@ function selectPlanet(n) {
  * Resets the camera variables to some default values.
  */
 
-function freeCamera() {
+function freeCamera () {
   pitchAngleMax = 85;
   pitchAngleMin = 0;
   nearPlane = 1.0;
@@ -555,7 +815,8 @@ function freeCamera() {
   ty = distance;
   tz = 0.0;
   fov = DEFAULT_FOV;
+  mouseXbuffer = 0.0;
+  mouseYbuffer = 0.0;
   free = true;
-  navigation.style.visibility = "hidden";
-  lookSunButton.style.visibility = "hidden";
+  navigation.style.visibility = 'hidden';
 }

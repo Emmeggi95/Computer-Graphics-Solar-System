@@ -34,8 +34,8 @@ div.absolute.topright {
 }
 div.absolute.bottom {
   bottom: 0;
-  left: 30%;
-  right: 30%;
+  left: 40%;
+  right: 40%;
   text-align: center;
 }
 div.absolute.bottomright {

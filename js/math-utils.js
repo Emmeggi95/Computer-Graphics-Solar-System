@@ -55,3 +55,38 @@ function angleFromHorizontalAxis(v) {
 function radToDeg(angle) {
     return angle * 180 / Math.PI;
 }
+
+function isNullVector(v) {
+    var result = true;
+    v.forEach( function(i) {
+        if(i != 0.0) {
+            result = false;
+        }
+    });
+    return result;
+}
+
+function resizeVector(v, size) {
+    var length = vectorLength(v); 
+    var result = [];
+    v.forEach( function(value, index) {
+        result[index] = value * size / length;
+    });
+    return result;
+}
+
+function scalarPerVector(s, v) {
+    var result = [];
+    v.forEach( function(value, index) {
+        result[index] = value * s;
+    });
+    return result;
+}
+
+function vectorLength(v) {
+    var squaredLength = 0.0;
+    v.forEach( function(i) {
+        squaredLength += i * i;
+    });
+    return Math.sqrt(squaredLength);
+}

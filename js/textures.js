@@ -38,6 +38,8 @@ function loadTextures() {
         gl.UNSIGNED_BYTE,
         image
       );
+      
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
       gl.generateMipmap(gl.TEXTURE_2D);
