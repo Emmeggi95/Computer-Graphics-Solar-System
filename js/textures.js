@@ -5,17 +5,17 @@
 var texturesDir = "http://127.0.0.1:8889/assets/textures/";
 
 var fileNames = [
-  "Sun.jpg",
-  "EarthDay.jpg",
-  "Moon.jpg",
-  "Mercury.jpg",
-  "VenusAtmosphere.jpg",
-  "Mars.jpg",
-  "Jupiter.jpg",
-  "Saturn.jpg",
+  "Sun2.jpg",
+  "EarthDay2.jpg",
+  "Moon2.jpg",
+  "Mercury2.jpg",
+  "VenusAtmosphere3.jpg",
+  "Mars2.jpg",
+  "Jupiter2.jpg",
+  "Saturn2.jpg",
   "Uranus.jpg",
   "Neptune.jpg",
-  "StarsMilkyWay.jpg"
+  "StarsMilkyWay2.jpg"
 ];
 
 var textures = [];
