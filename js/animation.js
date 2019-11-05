@@ -4,9 +4,12 @@
  * The animation can be stopped by pressing A (camera.js).
  */
 
+// Constant values
+const ROT_MAX = 30;
+
 // Time values
-var rot = 365; // time of one rotation of the earth
-var rev = 1; // time of one revolution of the earth
+var rot = ROT_MAX; // time of one rotation of the earth
+var rev = rot / 365; // time of one revolution of the earth
 
 // Shining effect values
 var meInfluence = 0.1; // Must be between 0 and 1
@@ -126,6 +129,6 @@ function shine() {
 
 
 function updateSpeedInfluence(val) {
-  rev = val;
-  rot = 365 * val;
+  rot = ROT_MAX * val;
+  rev = rot / 365;
 }

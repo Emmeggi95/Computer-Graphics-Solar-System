@@ -117,6 +117,7 @@ var free = true; // False if the user selected a planet
 var px, py, pz; // The center of the planet to which the camera is anchored
 var fixedTarget = false; // Switch between free camera rotation or camera locked on the Sun where the camera is anchored to a planet.
 var targetSelected = 0;
+var targetButtons = [];
 
 // Default vectors to calculate rotation when the camera is anchored to a planet and free to rotate
 var ctLockedDefault = [0.0, 0.0, 1.0];
@@ -731,18 +732,56 @@ function selectPlanet (n) {
   pitchAngleMin = -45;
   free = false;
 
-  var buttons = [];
+  // Clear buttons
+  targetButtons = [];
 
-  // Create button to fix target in the Sun
-  var sunButton = document.createElement ('BUTTON');
-  sunButton.appendChild (document.createTextNode ('Sun'));
-  sunButton.onclick = function () {
-    if(targetSelected == 0) {
+  if (n == 0) {
+    // Sun
+    px = 0.0;
+    fixSelection.innerHTML = '';
+    fixedTarget = false;
+  } else if (n == 4) {
+    // Moon
+    px = orbitScales[4] * d;
+
+    // Create buttons to fix target in the Sun and in the Earth
+    var sunButton = createButton("Sun", 0);
+    var earthButton = createButton("Earth", 1);
+
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (sunButton);
+    fixSelection.appendChild (earthButton);
+    targetButtons.push(sunButton);
+    targetButtons.push(earthButton);
+  } else {
+    // Other planets
+    px = orbitScales[n] * d + sunD;
+
+    // Create button to fix the target in the Sun
+    var sunButton = createButton("Sun", 0);
+
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (sunButton);
+    targetButtons.push(sunButton);
+  }
+  navigation.style.visibility = 'visible';
+  planetName.innerHTML = orbits[n].name;
+}
+
+/**
+ * Auxiliary function to create a button to set a fixed target
+ */
+
+function createButton(name, number) {
+  var button = document.createElement ('BUTTON');
+  button.appendChild (document.createTextNode (name));
+  button.onclick = function () {
+    if(targetSelected == number) {
       fixedTarget = !fixedTarget;
     } else {
-      targetSelected = 0;
+      targetSelected = number;
       fixedTarget = true;
-      buttons.forEach( function (button) {
+      targetButtons.forEach( function (button) {
         button.style.backgroundColor = '';
       })
     }    
@@ -754,51 +793,11 @@ function selectPlanet (n) {
     }
   };
 
-  if (n == 0) {
-    // Sun
-    px = 0.0;
-    fixSelection.innerHTML = '';
-    fixedTarget = false;
-  } else if (n == 4) {
-    // Moon
-    px = orbitScales[4] * d;
-
-    // Create button to fix target in the earth
-    var earthButton = document.createElement ('BUTTON');
-    earthButton.appendChild (document.createTextNode ('Earth'));
-    earthButton.onclick = function () {
-      if(targetSelected == 1) {
-        fixedTarget = !fixedTarget;
-      } else {
-        targetSelected = 1;
-        fixedTarget = true;
-        buttons.forEach( function (button) {
-          button.style.backgroundColor = '';
-        })
-      }
-
-      if (fixedTarget) {
-        this.style.backgroundColor = 'cyan';
-      } else {
-        this.style.backgroundColor = '';
-      }
-    };
-
-    fixSelection.innerHTML = 'Fix: ';
-    fixSelection.appendChild (sunButton);
-    fixSelection.appendChild (earthButton);
-    buttons.push(sunButton);
-    buttons.push(earthButton);
-  } else {
-    // Other planets
-    px = orbitScales[n] * d + sunD;
-
-    fixSelection.innerHTML = 'Fix: ';
-    fixSelection.appendChild (sunButton);
-    buttons.push(sunButton);
+  if (fixedTarget && targetSelected == number) {
+    button.style.backgroundColor = 'cyan';
   }
-  navigation.style.visibility = 'visible';
-  planetName.innerHTML = orbits[n].name;
+  
+  return button;
 }
 
 /**
@@ -812,11 +811,13 @@ function freeCamera () {
   nearPlane = 1.0;
   distance = DEFAULT_DISTANCE;
   tx = 0.0;
-  ty = distance;
+  ty = 0.0;
   tz = 0.0;
   fov = DEFAULT_FOV;
   mouseXbuffer = 0.0;
   mouseYbuffer = 0.0;
   free = true;
   navigation.style.visibility = 'hidden';
+  document.getElementById("slider1").value = 1;
+  updateSpeedInfluence(1);
 }
