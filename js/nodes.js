@@ -125,6 +125,8 @@ function buildSceneGraph() {
 
   sunNode = new Node();
   sunNode.localMatrix = utils.MakeScaleMatrix(1, 5, 5);
+  console.log("NODES");
+  console.log(indices);
   sunNode.drawInfo = {
     materialColor: [0.6, 0.6, 0.0],
     programInfo: program,

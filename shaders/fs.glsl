@@ -54,10 +54,18 @@ void main() {
     vec4 lambertDiffuse = textureColor * clamp(dot(normalize(plPosition - fsPosition), fsNormal), 0.0, 1.0);
     vec3 d = normalize(plPosition - fsPosition);
 
-    vec3 r = 2.0 * nNormal * dot(d, nNormal) - d;
+    // Blinn reflection
+    vec3 h = normalize(nEyeDirection + lookingDirection); 
+    vec4 specularLight = mSpecColor * pow(clamp(dot(fsNormal, h), 0.0, 1.0 ), mSpecPower);
     
-    vec3 h = normalize(nEyeDirection + lookingDirection);
-    vec4 specularLight = mSpecColor * pow(clamp(dot(lookingDirection, r), 0.0, 1.0 ), mSpecPower);
+    // Phong reflection    
+    vec3 r = 2.0 * nNormal * dot(d, nNormal) - d;
+    //vec4 specularLight = mSpecColor * pow(clamp(dot(lookingDirection, r), 0.0, 1.0 ), mSpecPower);
+
+    // Toon reflection
+    float toonThreshold = 0.1;
+    //vec4 specularLight = step(toonThreshold, dot(nEyeDirection, r)) * mSpecColor;
+
     // Shader output
     outColor = clamp(pointLight * lambertDiffuse + ambientLight + emissionLight + specularLight, 0.0, 1.0);
 }

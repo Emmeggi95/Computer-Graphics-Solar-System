@@ -24,7 +24,15 @@ if (!gl) {
 } 
 else {
   loadShaders(); // Load shader files and set variable handlers in JS.
-  loadModel(); // Load model from json and load buffers for positions, UVs and normals.
+  //loadModel(); // Load model from json and load buffers for positions, UVs and normals.
+  OBJ.downloadMeshes({"planet": this.modelDir + "OnePlanet.obj"}, keepGoing);
+  //loadTextures(); // Load textures from image files.
+  //buildSceneGraph(); // Build node structure defining planets and orbits.
+  //startDrawing(); // Set camera and trigger recursive method to draw elements on the screen.
+}
+
+function keepGoing(meshes){
+  loadModel(meshes); // Load model from json and load buffers for positions, UVs and normals.
   loadTextures(); // Load textures from image files.
   buildSceneGraph(); // Build node structure defining planets and orbits.
   startDrawing(); // Set camera and trigger recursive method to draw elements on the screen.

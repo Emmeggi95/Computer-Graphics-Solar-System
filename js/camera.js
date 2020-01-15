@@ -250,7 +250,7 @@ function moveCamera () {
     [ux, uy, uz] = rotate3dVector (cuDefault, yawAngle, pitchAngle, 1.0);
   } else {
     /**
-     * VIEW MODE 2 AND 3: CAMERA ANCHORED / ANCHORED LOOKING AT THE SUN
+     * VIEW MODE 2 AND 3: CAMERA ANCHORED / ANCHORED LOOKING AT THE SUN/EARTH
      */
 
     // Compute the position of the planet selected (world matrix of that planet in this istant multiplied per its initial position)
@@ -736,12 +736,18 @@ function selectPlanet (n) {
   targetButtons = [];
 
   if (n == 0) {
-    // Sun
+    // Sun: create only Earth button
     px = 0.0;
-    fixSelection.innerHTML = '';
-    fixedTarget = false;
+
+    if(targetSelected == 0) fixedTarget = false;
+
+    // Create button to fix target in the Earth
+    var earthButton = createButton("Earth", 1);
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (earthButton);
+    targetButtons.push(earthButton);
   } else if (n == 4) {
-    // Moon
+    // Moon: use special scale
     px = orbitScales[4] * d;
 
     // Create buttons to fix target in the Sun and in the Earth
@@ -753,16 +759,31 @@ function selectPlanet (n) {
     fixSelection.appendChild (earthButton);
     targetButtons.push(sunButton);
     targetButtons.push(earthButton);
-  } else {
-    // Other planets
+  } else if (n == 3) {
+    // Earth: create only Sun button
     px = orbitScales[n] * d + sunD;
 
-    // Create button to fix the target in the Sun
+    if(targetSelected == 1) fixedTarget = false;
+
+    // Create button to fix target in the Sun
     var sunButton = createButton("Sun", 0);
 
     fixSelection.innerHTML = 'Fix: ';
     fixSelection.appendChild (sunButton);
     targetButtons.push(sunButton);
+  } else {
+    // Other planets
+    px = orbitScales[n] * d + sunD;
+
+    // Create buttons to fix target in the Sun and in the Earth
+    var sunButton = createButton("Sun", 0);
+    var earthButton = createButton("Earth", 1);
+
+    fixSelection.innerHTML = 'Fix: ';
+    fixSelection.appendChild (sunButton);
+    fixSelection.appendChild (earthButton);
+    targetButtons.push(sunButton);
+    targetButtons.push(earthButton);
   }
   navigation.style.visibility = 'visible';
   planetName.innerHTML = orbits[n].name;

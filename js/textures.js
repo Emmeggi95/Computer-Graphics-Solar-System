@@ -6,7 +6,7 @@ var texturesDir = "http://127.0.0.1:8889/assets/textures/";
 
 var fileNames = [
   "Sun2.jpg",
-  "EarthDay2.jpg",
+  "EarthDay2signed.jpg",
   "Moon2.jpg",
   "Mercury2.jpg",
   "VenusAtmosphere3.jpg",

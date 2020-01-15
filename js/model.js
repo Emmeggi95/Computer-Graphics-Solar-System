@@ -17,7 +17,8 @@ var positionBuffer, indexBuffer, normalBuffer, UVBuffer;
 var vao;
 
 
-function loadModel() {
+function loadModel(meshes) {
+  /*
   // Load model from json file
   utils.get_json(modelDir + "OnePlanet.json", function(jsonFile) {
     model = jsonFile;
@@ -27,7 +28,15 @@ function loadModel() {
   vertices = model.meshes[0].vertices;
   indices = [].concat.apply([], model.meshes[0].faces);
   normals = model.meshes[0].normals;
-  UVs = model.meshes[0].texturecoords[0];
+  UVs = model.meshes[0].texturecoords[0];*/
+  
+
+  
+  vertices = meshes.planet.vertices;
+  normals = meshes.planet.vertexNormals;
+  UVs = meshes.planet.textures;
+  indices = meshes.planet.indices;
+  console.log(indices);
 
   // VAO
   vao = gl.createVertexArray();
@@ -72,3 +81,18 @@ function loadModel() {
   gl.enableVertexAttribArray(UVLoc);
   gl.vertexAttribPointer(UVLoc, 2, gl.FLOAT, false, 0, 0);
 }
+
+function readRemoteText(url) {
+  var xmlHttp = new XMLHttpRequest();
+		xmlHttp.open("GET", url, false); // Synchronous
+		xmlHttp.onreadystatechange = function() {
+			if (xmlHttp.readyState == 4 && xmlHttp.status==200) {
+        // The file is loaded. Return it.
+        //console.log(xmlHttp.responseText);
+        return xmlHttp.responseText;
+			}
+		};
+		// Send the request
+		xmlHttp.send();
+}
+
